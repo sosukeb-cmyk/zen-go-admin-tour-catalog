@@ -30,6 +30,9 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+const ROUTE_ROW_GRID =
+  "grid grid-cols-1 gap-2 sm:grid-cols-[1fr_7rem_2.75rem_2rem] sm:items-end";
+
 export default function TourTemplateModal({
   tour,
   isNew,
@@ -361,30 +364,28 @@ export default function TourTemplateModal({
               Route Builder
             </p>
 
-            <div className="mb-4 flex gap-3">
-              <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
-                <div>
-                  <FieldLabel>Pick-up Spot</FieldLabel>
-                  <input
-                    type="text"
-                    value={draft.waypoints.pickup}
-                    onChange={(e) => updateWaypoint("pickup", e.target.value)}
-                    placeholder="Pick-up description"
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
-                  />
-                </div>
-                <div>
-                  <FieldLabel>Time</FieldLabel>
-                  <input
-                    type="time"
-                    value={draft.waypoints.pickupTime}
-                    onChange={(e) => {
-                      updateWaypoint("pickupTime", e.target.value);
-                      update({ startTime: e.target.value });
-                    }}
-                    className="rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
-                  />
-                </div>
+            <div className={`mb-4 ${ROUTE_ROW_GRID}`}>
+              <div>
+                <FieldLabel>Pick-up Spot</FieldLabel>
+                <input
+                  type="text"
+                  value={draft.waypoints.pickup}
+                  onChange={(e) => updateWaypoint("pickup", e.target.value)}
+                  placeholder="Pick-up description"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                />
+              </div>
+              <div>
+                <FieldLabel>Time</FieldLabel>
+                <input
+                  type="time"
+                  value={draft.waypoints.pickupTime}
+                  onChange={(e) => {
+                    updateWaypoint("pickupTime", e.target.value);
+                    update({ startTime: e.target.value });
+                  }}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                />
               </div>
               <MapLocationPicker
                 theme="light"
@@ -399,33 +400,32 @@ export default function TourTemplateModal({
                   })
                 }
               />
+              <div aria-hidden="true" className="hidden sm:block" />
             </div>
 
-            <div className="mb-4 space-y-3">
+            <div className="mb-4 space-y-2">
               <FieldLabel>Stopovers</FieldLabel>
               {draft.waypoints.stopovers.map((stop, i) => (
-                <div key={i} className="flex items-end gap-2">
-                  <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-[1fr_7rem]">
-                    <input
-                      type="text"
-                      value={stop.location}
-                      onChange={(e) =>
-                        updateStopover(i, "location", e.target.value)
-                      }
-                      placeholder={`Stop ${i + 1} description`}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
-                    />
-                    <input
-                      type="text"
-                      value={stop.waitTime}
-                      onChange={(e) =>
-                        updateStopover(i, "waitTime", e.target.value)
-                      }
-                      placeholder="Wait time"
-                      aria-label={`Stop ${i + 1} wait time`}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
-                    />
-                  </div>
+                <div key={i} className={ROUTE_ROW_GRID}>
+                  <input
+                    type="text"
+                    value={stop.location}
+                    onChange={(e) =>
+                      updateStopover(i, "location", e.target.value)
+                    }
+                    placeholder={`Stop ${i + 1} description`}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                  />
+                  <input
+                    type="text"
+                    value={stop.waitTime}
+                    onChange={(e) =>
+                      updateStopover(i, "waitTime", e.target.value)
+                    }
+                    placeholder="Wait time"
+                    aria-label={`Stop ${i + 1} wait time`}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                  />
                   <MapLocationPicker
                     theme="light"
                     label={`Stopover ${i + 1}`}
@@ -435,7 +435,7 @@ export default function TourTemplateModal({
                   <button
                     type="button"
                     onClick={() => removeStopover(i)}
-                    className="rounded p-2 text-red-400 transition hover:bg-red-50 hover:text-red-600"
+                    className="flex h-9 w-8 shrink-0 items-center justify-center rounded text-red-400 transition hover:bg-red-50 hover:text-red-600"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -451,8 +451,8 @@ export default function TourTemplateModal({
               </button>
             </div>
 
-            <div className="mb-4 flex gap-3">
-              <div className="flex-1">
+            <div className={`mb-4 ${ROUTE_ROW_GRID}`}>
+              <div>
                 <FieldLabel>Drop-off Spot</FieldLabel>
                 <input
                   type="text"
@@ -462,6 +462,7 @@ export default function TourTemplateModal({
                   className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
                 />
               </div>
+              <div aria-hidden="true" className="hidden sm:block" />
               <MapLocationPicker
                 theme="light"
                 label="Drop-off Spot"
@@ -475,6 +476,7 @@ export default function TourTemplateModal({
                   })
                 }
               />
+              <div aria-hidden="true" className="hidden sm:block" />
             </div>
 
             <div className="flex gap-6 rounded-lg bg-gray-50 px-4 py-3">
