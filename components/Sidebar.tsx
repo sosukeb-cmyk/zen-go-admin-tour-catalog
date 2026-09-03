@@ -49,7 +49,7 @@ export default function Sidebar({ activeView, onNavigate }: SidebarProps) {
                   onClick={() => onNavigate(id)}
                   className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                     isActive
-                      ? "border-l-[3px] border-[#FACC15] bg-white/5 pl-[9px] text-[#FACC15]"
+                      ? "border-l-[3px] border-[#FACC15] bg-[#FACC15]/[0.12] pl-[9px] font-semibold text-[#FACC15]"
                       : "border-l-[3px] border-transparent text-white/60 hover:bg-white/5 hover:text-white"
                   }`}
                 >

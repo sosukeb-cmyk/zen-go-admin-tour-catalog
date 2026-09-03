@@ -14,6 +14,7 @@ interface VehiclePricingTableProps {
   durationTier: DurationTier;
   pricing: TourVehiclePricing | null;
   onChange: (pricing: TourVehiclePricing | null) => void;
+  locked?: boolean;
 }
 
 function rowKey(row: { vehicleType: string; vehicleName: string }): string {
@@ -39,6 +40,7 @@ export default function VehiclePricingTable({
   durationTier,
   pricing,
   onChange,
+  locked = false,
 }: VehiclePricingTableProps) {
   const isHalfDay = durationTier.startsWith("Half Day");
   const applicableLabel = isHalfDay ? "Half Day" : "Full Day";
@@ -100,7 +102,7 @@ export default function VehiclePricingTable({
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {pricing && (
+          {pricing && !locked && (
             <button
               type="button"
               onClick={() => onChange(null)}
@@ -111,8 +113,9 @@ export default function VehiclePricingTable({
           )}
           <button
             type="button"
+            disabled={locked}
             onClick={handleLoad}
-            className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-lg bg-[#FACC15] px-3.5 text-[13px] font-semibold text-[#121621] transition hover:bg-[#eab308]"
+            className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-lg bg-[#FACC15] px-3.5 text-[13px] font-semibold text-[#121621] transition hover:bg-[#eab308] disabled:cursor-default disabled:opacity-45 disabled:hover:bg-[#FACC15]"
           >
             <RefreshCw className="h-[15px] w-[15px]" />
             {pricing ? "Reload from CMS" : "Load Prices"}
@@ -196,8 +199,9 @@ export default function VehiclePricingTable({
                           type="button"
                           role="switch"
                           aria-checked={row.custom}
+                          disabled={locked}
                           onClick={() => toggleCustom(i)}
-                          className={`inline-flex h-[22px] items-center rounded-full text-[10px] font-extrabold tracking-wide ${
+                          className={`inline-flex h-[22px] items-center rounded-full text-[10px] font-extrabold tracking-wide disabled:cursor-default disabled:opacity-60 ${
                             row.custom
                               ? "justify-start bg-[#FACC15] pl-[9px] pr-1 text-[#121621]"
                               : "justify-end bg-gray-300 pl-1 pr-[9px] text-gray-600"
@@ -224,6 +228,7 @@ export default function VehiclePricingTable({
                             type="number"
                             min="0"
                             step="1000"
+                            readOnly={locked}
                             value={row.customPrice}
                             onChange={(e) =>
                               setCustomPrice(i, e.target.value)
