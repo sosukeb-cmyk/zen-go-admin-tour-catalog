@@ -400,7 +400,7 @@ export default function TourTemplateModal({
 
             <div>
               <FieldLabel>Duration Tier</FieldLabel>
-              <div className="grid grid-cols-1 gap-1.5">
+              <div className="grid grid-cols-2 gap-1.5">
                 {DURATION_TIERS.map((tier) => (
                   <button
                     key={tier}
@@ -411,7 +411,7 @@ export default function TourTemplateModal({
                         durationTier: tier as DurationTier,
                       })
                     }
-                    className={`rounded-lg px-2.5 py-2 text-left text-xs font-semibold transition disabled:cursor-default ${
+                    className={`rounded-lg px-2.5 py-2 text-center text-xs font-semibold transition disabled:cursor-default ${
                       draft.durationTier === tier
                         ? "bg-[#121621] text-white"
                         : `bg-white text-gray-600 ${locked ? "opacity-60" : "hover:bg-gray-100"} border border-gray-200`
