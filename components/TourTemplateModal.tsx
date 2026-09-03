@@ -80,6 +80,11 @@ export default function TourTemplateModal({
 
   const locked = mode === "view";
 
+  /** A real, save-worthy change: either an undo-tracked edit, or an active
+   * custom price override (setting one doesn't itself push undo history). */
+  const hasCustomOverride = !!draft.vehiclePricing?.rows.some((r) => r.custom);
+  const hasEdits = history.length > 0 || hasCustomOverride;
+
   const update = (patch: Partial<TourTemplate>) =>
     setDraft((prev) => (prev ? { ...prev, ...patch } : prev));
 
@@ -106,7 +111,7 @@ export default function TourTemplateModal({
   const enterEdit = () => setMode("edit");
 
   const cancelEdits = () => {
-    if (mode === "view" || !baseline) {
+    if (mode === "view" || !baseline || !hasEdits) {
       onClose();
       return;
     }
@@ -202,22 +207,26 @@ export default function TourTemplateModal({
   const dirty = baseline
     ? JSON.stringify(baseline) !== JSON.stringify(draft)
     : true;
-  const saveEnabled = canSave && dirty && !routeEditing;
-  const lastLabel = history.length ? history[history.length - 1].label : "";
+  const saveEnabled = canSave && dirty && hasEdits && !routeEditing;
+  const lastLabel = history.length
+    ? history[history.length - 1].label
+    : hasCustomOverride
+      ? "Custom price set"
+      : "";
   const footerNote = saveError
     ? saveError
     : mode === "view"
       ? "Viewing — locked. Choose Edit template to make changes."
       : routeEditing
         ? "Editing route — choose Set route to apply it to this template."
-        : dirty
+        : hasEdits
           ? `${history.length || 1} unsaved change${
               (history.length || 1) === 1 ? "" : "s"
-            }${lastLabel ? ` · last: ${lastLabel}` : ""}`
-          : "No changes yet.";
+            } · last: ${lastLabel}`
+          : "Viewing — no changes yet.";
   const footerNoteClass = saveError
     ? "font-medium text-red-600"
-    : dirty && mode === "edit"
+    : hasEdits && mode === "edit"
       ? "font-medium text-gray-600"
       : "text-gray-400";
 
@@ -921,7 +930,7 @@ export default function TourTemplateModal({
               onClick={cancelEdits}
               className="rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
             >
-              {mode === "view" ? "Close" : "Cancel"}
+              {mode === "view" || !hasEdits ? "Close" : "Cancel"}
             </button>
             {mode === "view" ? (
               <button
@@ -933,14 +942,16 @@ export default function TourTemplateModal({
                 Edit template
               </button>
             ) : (
-              <button
-                type="button"
-                disabled={!saveEnabled}
-                onClick={handleSave}
-                className="rounded-lg bg-[#FACC15] px-6 py-2.5 text-sm font-semibold text-[#121621] transition hover:bg-[#eab308] disabled:cursor-not-allowed disabled:opacity-45"
-              >
-                {isNew ? "Create template" : "Save changes"}
-              </button>
+              hasEdits && (
+                <button
+                  type="button"
+                  disabled={!saveEnabled}
+                  onClick={handleSave}
+                  className="rounded-lg bg-[#FACC15] px-6 py-2.5 text-sm font-semibold text-[#121621] transition hover:bg-[#eab308] disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  {isNew ? "Create template" : "Save changes"}
+                </button>
+              )
             )}
           </div>
         </div>

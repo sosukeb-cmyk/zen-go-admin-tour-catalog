@@ -89,8 +89,22 @@ export default function VehiclePricingTable({
     pricing?.rows.filter((r) => r.custom && !r.customPrice.trim()).length ?? 0;
 
   return (
-    <div className="rounded-xl border border-gray-200 p-4">
-      <div className="flex items-start justify-between gap-4">
+    <div className="relative rounded-xl border border-gray-200 p-4">
+      {pricing && (
+        <button
+          type="button"
+          title="Reload from CMS"
+          disabled={locked}
+          onClick={handleLoad}
+          className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 transition hover:border-gray-900 hover:text-gray-900 disabled:cursor-default disabled:opacity-40 disabled:hover:border-gray-200 disabled:hover:text-gray-400"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+        </button>
+      )}
+
+      <div
+        className={`flex items-start justify-between gap-4 ${pricing ? "pr-9" : ""}`}
+      >
         <div>
           <p className="flex items-center gap-2 text-sm font-bold text-gray-800">
             <DollarSign className="h-4 w-4 text-gray-500" />
@@ -101,16 +115,24 @@ export default function VehiclePricingTable({
             vehicles only
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {pricing && !locked && (
-            <button
-              type="button"
-              onClick={() => onChange(null)}
-              className="h-8 rounded-lg border border-gray-200 bg-white px-3 text-[13px] font-medium text-gray-600 transition hover:bg-gray-50"
-            >
-              Clear
-            </button>
-          )}
+        {pricing && !locked && (
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            className="h-8 shrink-0 rounded-lg border border-gray-200 bg-white px-3 text-[13px] font-medium text-gray-600 transition hover:bg-gray-50"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {!pricing ? (
+        <div className="mt-3.5 flex flex-col items-center gap-3 rounded-[10px] border border-dashed border-gray-200 bg-gray-50/60 p-5 text-center">
+          <p className="mx-auto max-w-[460px] text-xs leading-[18px] text-gray-500">
+            Load Prices pulls the Sightseeing category from the Pricing CMS,
+            filtered to this template&apos;s office location, and brings in
+            every vehicle marked Available.
+          </p>
           <button
             type="button"
             disabled={locked}
@@ -118,21 +140,8 @@ export default function VehiclePricingTable({
             className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-lg bg-[#FACC15] px-3.5 text-[13px] font-semibold text-[#121621] transition hover:bg-[#eab308] disabled:cursor-default disabled:opacity-45 disabled:hover:bg-[#FACC15]"
           >
             <RefreshCw className="h-[15px] w-[15px]" />
-            {pricing ? "Reload from CMS" : "Load Prices"}
+            Load Prices
           </button>
-        </div>
-      </div>
-
-      {!pricing ? (
-        <div className="mt-3.5 rounded-[10px] border border-dashed border-gray-200 bg-gray-50/60 p-5 text-center">
-          <p className="text-[13px] font-semibold text-gray-600">
-            No vehicle prices loaded yet
-          </p>
-          <p className="mx-auto mt-1.5 max-w-[460px] text-xs leading-[18px] text-gray-500">
-            Load Prices pulls the Sightseeing category from the Pricing CMS,
-            filtered to this template&apos;s office location, and brings in
-            every vehicle marked Available.
-          </p>
         </div>
       ) : (
         <>

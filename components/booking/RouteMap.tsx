@@ -94,7 +94,7 @@ export default function RouteMap({ waypoints }: RouteMapProps) {
       <div className="flex flex-wrap items-center gap-4 border-t border-gray-100 bg-gray-50/80 px-3.5 py-2.5 text-[11px] text-gray-400">
         <span className="inline-flex items-center gap-1.5">
           <span className="h-2 w-2 rounded-full bg-emerald-600" />
-          Pick-up
+          Start
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="h-2 w-2 rounded-full bg-[#121621]" />
@@ -102,7 +102,7 @@ export default function RouteMap({ waypoints }: RouteMapProps) {
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="h-2 w-2 rounded-full bg-red-600" />
-          Drop-off
+          End
         </span>
       </div>
     </div>
