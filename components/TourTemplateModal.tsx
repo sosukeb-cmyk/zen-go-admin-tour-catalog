@@ -13,6 +13,7 @@ import type { DurationTier, OfficeLocation, TourTemplate } from "@/lib/types";
 import { DURATION_TIERS, OFFICE_LOCATIONS } from "@/lib/types";
 import { formatDuration, formatPrice } from "@/lib/tourUtils";
 import MapLocationPicker from "@/components/booking/MapLocationPicker";
+import VehiclePricingTable from "@/components/booking/VehiclePricingTable";
 import type { MapLocation } from "@/lib/mapLocationMock";
 
 interface TourTemplateModalProps {
@@ -41,11 +42,13 @@ export default function TourTemplateModal({
 }: TourTemplateModalProps) {
   const [draft, setDraft] = useState<TourTemplate | null>(null);
   const [showHidden, setShowHidden] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (tour) {
       setDraft(structuredClone(tour));
       setShowHidden(false);
+      setSaveError(null);
     }
   }, [tour]);
 
@@ -115,6 +118,16 @@ export default function TourTemplateModal({
 
   const handleSave = () => {
     if (!draft.tripName.trim()) return;
+    const hasMissingCustomPrice = draft.vehiclePricing?.rows.some(
+      (row) => row.custom && !row.customPrice.trim(),
+    );
+    if (hasMissingCustomPrice) {
+      setSaveError(
+        "Set a custom price for every vehicle with Custom turned on, or turn Custom off.",
+      );
+      return;
+    }
+    setSaveError(null);
     onSave({
       ...draft,
       reference: draft.id,
@@ -544,6 +557,14 @@ export default function TourTemplateModal({
             </div>
           </div>
 
+          {/* Vehicle Pricing */}
+          <VehiclePricingTable
+            officeLocation={draft.officeLocation}
+            durationTier={draft.durationTier}
+            pricing={draft.vehiclePricing}
+            onChange={(vehiclePricing) => update({ vehiclePricing })}
+          />
+
           {/* Vehicle Assignment — hidden by default */}
           <div
             className={`rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-4 ${hiddenClass}`}
@@ -589,6 +610,11 @@ export default function TourTemplateModal({
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-4">
+          {saveError && (
+            <p className="mr-auto text-xs font-medium text-red-600">
+              {saveError}
+            </p>
+          )}
           <button
             type="button"
             onClick={onClose}

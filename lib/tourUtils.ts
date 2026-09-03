@@ -101,5 +101,6 @@ export function createEmptyTour(id: string): TourTemplate {
     driverName: null,
     plateNumber: null,
     useDefaultPrice: true,
+    vehiclePricing: null,
   };
 }

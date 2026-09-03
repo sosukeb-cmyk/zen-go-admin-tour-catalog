@@ -38,6 +38,7 @@ export const SEED_TOURS: TourTemplate[] = [
     driverName: null,
     plateNumber: null,
     useDefaultPrice: true,
+    vehiclePricing: null,
   },
   {
     id: "#T0002A",
@@ -75,6 +76,7 @@ export const SEED_TOURS: TourTemplate[] = [
     driverName: null,
     plateNumber: null,
     useDefaultPrice: true,
+    vehiclePricing: null,
   },
   {
     id: "#T0003A",
@@ -112,5 +114,6 @@ export const SEED_TOURS: TourTemplate[] = [
     driverName: null,
     plateNumber: null,
     useDefaultPrice: true,
+    vehiclePricing: null,
   },
 ];

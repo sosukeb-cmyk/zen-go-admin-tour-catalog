@@ -7,6 +7,21 @@ export type DurationTier =
 
 export type TourStatus = "active" | "inactive";
 
+export interface TourVehiclePriceRow {
+  vehicleType: string;
+  vehicleName: string;
+  owner: string;
+  halfDayPrice: number;
+  fullDayPrice: number;
+  custom: boolean;
+  customPrice: string;
+}
+
+export interface TourVehiclePricing {
+  office: OfficeLocation;
+  rows: TourVehiclePriceRow[];
+}
+
 export interface MapLocationRef {
   title: string;
   address: string;
@@ -55,6 +70,7 @@ export interface OrderDetail {
   driverName: string | null;
   plateNumber: string | null;
   useDefaultPrice: boolean;
+  vehiclePricing: TourVehiclePricing | null;
 }
 
 /** Catalog template extending OrderDetail with catalog-specific metrics. */
