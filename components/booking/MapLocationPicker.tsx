@@ -62,7 +62,7 @@ export default function MapLocationPicker({
         }
         className={`flex shrink-0 items-center justify-center rounded-lg border transition ${
           compact
-            ? "h-9 w-9 self-center"
+            ? "h-9 w-9 self-end"
             : "w-11 flex-col self-stretch rounded-xl"
         } ${value ? styles.filled : styles.empty}`}
       >
