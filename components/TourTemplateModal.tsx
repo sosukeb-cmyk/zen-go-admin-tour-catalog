@@ -111,7 +111,7 @@ export default function TourTemplateModal({
   const enterEdit = () => setMode("edit");
 
   const cancelEdits = () => {
-    if (mode === "view" || !baseline || !hasEdits) {
+    if (mode === "view" || !baseline) {
       onClose();
       return;
     }
@@ -223,7 +223,7 @@ export default function TourTemplateModal({
           ? `${history.length || 1} unsaved change${
               (history.length || 1) === 1 ? "" : "s"
             } · last: ${lastLabel}`
-          : "Viewing — no changes yet.";
+          : "No changes yet.";
   const footerNoteClass = saveError
     ? "font-medium text-red-600"
     : hasEdits && mode === "edit"
@@ -914,12 +914,17 @@ export default function TourTemplateModal({
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 bg-gray-50/60 px-6 py-4">
           <p className={`text-xs ${footerNoteClass}`}>{footerNote}</p>
           <div className="flex items-center gap-3">
-            {history.length > 0 && (
+            {mode === "edit" && (
               <button
                 type="button"
-                title={`Undo: ${history[history.length - 1].label}`}
+                disabled={history.length === 0}
+                title={
+                  history.length > 0
+                    ? `Undo: ${history[history.length - 1].label}`
+                    : "Nothing to undo yet"
+                }
                 onClick={undo}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-600 transition hover:border-gray-900 hover:text-gray-900"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-600 transition hover:border-gray-900 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-gray-200 disabled:hover:text-gray-600"
               >
                 <Undo2 className="h-3.5 w-3.5" />
                 Undo
@@ -930,7 +935,7 @@ export default function TourTemplateModal({
               onClick={cancelEdits}
               className="rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
             >
-              {mode === "view" || !hasEdits ? "Close" : "Cancel"}
+              {mode === "view" ? "Close" : "Cancel"}
             </button>
             {mode === "view" ? (
               <button
@@ -942,16 +947,14 @@ export default function TourTemplateModal({
                 Edit template
               </button>
             ) : (
-              hasEdits && (
-                <button
-                  type="button"
-                  disabled={!saveEnabled}
-                  onClick={handleSave}
-                  className="rounded-lg bg-[#FACC15] px-6 py-2.5 text-sm font-semibold text-[#121621] transition hover:bg-[#eab308] disabled:cursor-not-allowed disabled:opacity-45"
-                >
-                  {isNew ? "Create template" : "Save changes"}
-                </button>
-              )
+              <button
+                type="button"
+                disabled={!saveEnabled}
+                onClick={handleSave}
+                className="rounded-lg bg-[#FACC15] px-6 py-2.5 text-sm font-semibold text-[#121621] transition hover:bg-[#eab308] disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                {isNew ? "Create template" : "Save changes"}
+              </button>
             )}
           </div>
         </div>
