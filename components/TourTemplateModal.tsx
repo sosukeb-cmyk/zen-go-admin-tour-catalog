@@ -799,6 +799,7 @@ export default function TourTemplateModal({
                       </div>
                       <MapLocationPicker
                         theme="light"
+                        size="compact"
                         label="Pick-up Spot"
                         value={wp.pickupMapLocation ?? null}
                         onChange={(loc) => updateRouteCopy({ pickupMapLocation: loc })}
@@ -833,6 +834,7 @@ export default function TourTemplateModal({
                         />
                         <MapLocationPicker
                           theme="light"
+                          size="compact"
                           label={`Stopover ${i + 1}`}
                           value={stop.mapLocation ?? null}
                           onChange={(loc) => {
@@ -887,6 +889,7 @@ export default function TourTemplateModal({
                       <div aria-hidden="true" className="hidden sm:block" />
                       <MapLocationPicker
                         theme="light"
+                        size="compact"
                         label="Drop-off Spot"
                         value={wp.dropoffMapLocation ?? null}
                         onChange={(loc) => updateRouteCopy({ dropoffMapLocation: loc })}

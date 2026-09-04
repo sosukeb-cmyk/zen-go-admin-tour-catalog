@@ -14,20 +14,23 @@ interface MapLocationPickerProps {
   onChange: (location: MapLocation | null) => void;
   label: string;
   theme?: PickerTheme;
+  /** "compact" drops the text label and stretch-to-row sizing in favor of
+   * a small fixed square — for tight grid rows (e.g. the route editor). */
+  size?: "default" | "compact";
 }
 
 const triggerStyles: Record<PickerTheme, { empty: string; filled: string }> = {
   dark: {
     empty:
-      "border-white/15 bg-white/5 text-white/35 hover:border-white/25 hover:bg-white/10 hover:text-white/60",
+      "border-white/10 bg-white/5 text-white/25 hover:border-white/20 hover:bg-white/10 hover:text-white/45",
     filled:
-      "border-emerald-400/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/15",
+      "border-emerald-400 bg-emerald-500/90 text-white hover:bg-emerald-500",
   },
   light: {
     empty:
-      "border-gray-200 bg-gray-50 text-gray-400 hover:border-gray-300 hover:bg-gray-100 hover:text-gray-600",
+      "border-gray-200 bg-gray-50 text-gray-300 hover:border-gray-300 hover:bg-gray-100 hover:text-gray-500",
     filled:
-      "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
+      "border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600",
   },
 };
 
@@ -36,9 +39,11 @@ export default function MapLocationPicker({
   onChange,
   label,
   theme = "dark",
+  size = "default",
 }: MapLocationPickerProps) {
   const [open, setOpen] = useState(false);
   const styles = triggerStyles[theme];
+  const compact = size === "compact";
 
   return (
     <>
@@ -55,14 +60,22 @@ export default function MapLocationPicker({
             ? `Edit map location for ${label}`
             : `Add map location for ${label}`
         }
-        className={`flex w-11 shrink-0 flex-col items-center justify-center self-stretch rounded-xl border transition ${value ? styles.filled : styles.empty}`}
+        className={`flex shrink-0 items-center justify-center rounded-lg border transition ${
+          compact
+            ? "h-9 w-9 self-center"
+            : "w-11 flex-col self-stretch rounded-xl"
+        } ${value ? styles.filled : styles.empty}`}
       >
         <MapPin
-          className={`h-4 w-4 ${value ? (theme === "light" ? "text-emerald-600" : "text-emerald-400") : ""}`}
+          className="h-4 w-4"
+          fill={value ? "currentColor" : "none"}
+          fillOpacity={value ? 0.18 : undefined}
         />
-        <span className="mt-1 text-[9px] font-medium uppercase tracking-wide">
-          {value ? "Pin" : "Map"}
-        </span>
+        {!compact && (
+          <span className="mt-1 text-[9px] font-medium uppercase tracking-wide">
+            {value ? "Pin" : "Map"}
+          </span>
+        )}
       </button>
 
       {open && (
