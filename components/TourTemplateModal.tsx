@@ -38,6 +38,7 @@ import RouteMap from "@/components/booking/RouteMap";
 import VehiclePricingTable from "@/components/booking/VehiclePricingTable";
 import AirportVehiclePricingTable from "@/components/booking/AirportVehiclePricingTable";
 import { AIRPORT_MAP_LOCATIONS, type MapLocation } from "@/lib/mapLocationMock";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface TourTemplateModalProps {
   tour: TourTemplate | null;
@@ -47,6 +48,9 @@ interface TourTemplateModalProps {
   /** Quick status flip — same instant, no-save-required action as the
    * catalog table's row toggle, just reachable from in here too. */
   onToggleStatus: (id: string) => void;
+  /** Permanently removes the template — same action as the catalog
+   * table's row delete, just reachable from in here too. */
+  onDelete: (id: string) => void;
 }
 
 interface HistoryEntry {
@@ -71,6 +75,7 @@ export default function TourTemplateModal({
   onClose,
   onSave,
   onToggleStatus,
+  onDelete,
 }: TourTemplateModalProps) {
   const [draft, setDraft] = useState<TourTemplate | null>(null);
   const [baseline, setBaseline] = useState<TourTemplate | null>(null);
@@ -78,6 +83,7 @@ export default function TourTemplateModal({
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [routeEditing, setRouteEditing] = useState(false);
   const [routeCopy, setRouteCopy] = useState<TourWaypoints | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [routeMapOpen, setRouteMapOpen] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -1149,7 +1155,20 @@ export default function TourTemplateModal({
 
         {/* Footer */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 bg-gray-50/60 px-6 py-4">
-          <p className={`text-xs ${footerNoteClass}`}>{footerNote}</p>
+          <div className="flex items-center gap-3">
+            <p className={`text-xs ${footerNoteClass}`}>{footerNote}</p>
+            {!isNew && (
+              <button
+                type="button"
+                title="Delete template"
+                onClick={() => setDeleteConfirmOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete
+              </button>
+            )}
+          </div>
           <div className="flex items-center gap-3">
             {mode === "edit" && (
               <button
@@ -1196,6 +1215,19 @@ export default function TourTemplateModal({
           </div>
         </div>
       </div>
+
+      {deleteConfirmOpen && (
+        <ConfirmDialog
+          title="Delete this template?"
+          description={`"${draft.tripName || "Untitled template"}" (${draft.id}) will be permanently removed from the catalog. This can't be undone.`}
+          confirmLabel="Delete template"
+          onCancel={() => setDeleteConfirmOpen(false)}
+          onConfirm={() => {
+            onDelete(tour.id);
+            setDeleteConfirmOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }

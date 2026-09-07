@@ -54,6 +54,11 @@ export default function AdminShell() {
     );
   }, []);
 
+  const handleDelete = useCallback((id: string) => {
+    setTours((prev) => prev.filter((t) => t.id !== id));
+    setModalTour((prev) => (prev?.id === id ? null : prev));
+  }, []);
+
   const handleSave = useCallback(
     (saved: TourTemplate) => {
       if (isNewTour) {
@@ -96,6 +101,7 @@ export default function AdminShell() {
             onEdit={openEdit}
             onAddTour={openAdd}
             onRefresh={handleRefresh}
+            onDelete={handleDelete}
           />
         ) : activeView === "pricing-cms" ? (
           <PricingCMSView />
@@ -114,6 +120,7 @@ export default function AdminShell() {
           }}
           onSave={handleSave}
           onToggleStatus={handleToggleStatus}
+          onDelete={handleDelete}
         />
       )}
     </div>

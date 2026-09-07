@@ -8,10 +8,12 @@ import {
   RefreshCw,
   Search,
   SlidersHorizontal,
+  Trash2,
 } from "lucide-react";
 import type { OfficeLocation, TourStatus, TourTemplate } from "@/lib/types";
 import { OFFICE_LOCATIONS } from "@/lib/types";
 import { formatPrice, serviceTypeBadgeClasses } from "@/lib/tourUtils";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface TourCatalogViewProps {
   tours: TourTemplate[];
@@ -19,6 +21,7 @@ interface TourCatalogViewProps {
   onEdit: (id: string) => void;
   onAddTour: () => void;
   onRefresh: () => void;
+  onDelete: (id: string) => void;
 }
 
 function pillClass(active: boolean) {
@@ -67,8 +70,10 @@ export default function TourCatalogView({
   onEdit,
   onAddTour,
   onRefresh,
+  onDelete,
 }: TourCatalogViewProps) {
   const [search, setSearch] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<TourTemplate | null>(null);
   const [officeFilter, setOfficeFilter] = useState<OfficeLocation | "all">(
     "all",
   );
@@ -110,7 +115,7 @@ export default function TourCatalogView({
 
   const activeCount = tours.filter((t) => t.status === "active").length;
   const visibleCount =
-    1 + OPTIONAL_COLUMNS.filter((c) => visibleColumns[c.key]).length + 1;
+    1 + OPTIONAL_COLUMNS.filter((c) => visibleColumns[c.key]).length + 2;
 
   return (
     <div className="flex flex-col gap-5">
@@ -206,6 +211,7 @@ export default function TourCatalogView({
                   </th>
                 ),
               )}
+              <th className="w-10 px-2 py-2.5" aria-hidden="true" />
               <th className="relative w-10 px-2 py-2.5">
                 <button
                   type="button"
@@ -371,6 +377,19 @@ export default function TourCatalogView({
                         </div>
                       </td>
                     )}
+                    <td className="px-2 py-3.5">
+                      <button
+                        type="button"
+                        title="Delete template"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteTarget(tour);
+                        }}
+                        className="rounded p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </td>
                     <td />
                   </tr>
                 );
@@ -379,6 +398,19 @@ export default function TourCatalogView({
           </tbody>
         </table>
       </div>
+
+      {deleteTarget && (
+        <ConfirmDialog
+          title="Delete this template?"
+          description={`"${deleteTarget.tripName || "Untitled template"}" (${deleteTarget.id}) will be permanently removed from the catalog. This can't be undone.`}
+          confirmLabel="Delete template"
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={() => {
+            onDelete(deleteTarget.id);
+            setDeleteTarget(null);
+          }}
+        />
+      )}
     </div>
   );
 }
