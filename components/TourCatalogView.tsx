@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   CalendarClock,
   Globe,
   Plus,
@@ -22,6 +25,17 @@ interface TourCatalogViewProps {
   onAddTour: () => void;
   onRefresh: () => void;
   onDelete: (id: string) => void;
+}
+
+function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
+  if (!active) {
+    return <ArrowUpDown className="h-3 w-3 text-gray-300" />;
+  }
+  return dir === "asc" ? (
+    <ArrowUp className="h-3 w-3 text-gray-900" />
+  ) : (
+    <ArrowDown className="h-3 w-3 text-gray-900" />
+  );
 }
 
 function pillClass(active: boolean) {
@@ -64,6 +78,43 @@ const DEFAULT_VISIBLE_COLUMNS: Record<ColumnKey, boolean> = {
   preview: true,
 };
 
+type SortableKey = Exclude<ColumnKey, "preview"> | "name";
+type SortDirection = "asc" | "desc";
+
+/** Every sortable column's comparable value and its first-click direction —
+ * text columns start A→Z, numeric-ish ones start highest→lowest. Rows
+ * with no value for the column (e.g. Airport's null Duration/Start) always
+ * sort to the bottom, regardless of direction. */
+const SORT_CONFIG: Record<
+  SortableKey,
+  {
+    type: "string" | "number";
+    getValue: (t: TourTemplate) => string | number | null;
+    defaultDir: SortDirection;
+  }
+> = {
+  name: { type: "string", getValue: (t) => t.tripName || null, defaultDir: "asc" },
+  serviceType: { type: "string", getValue: (t) => t.serviceType, defaultDir: "asc" },
+  office: { type: "string", getValue: (t) => t.officeLocation, defaultDir: "asc" },
+  duration: { type: "string", getValue: (t) => t.durationTier, defaultDir: "asc" },
+  start: {
+    type: "string",
+    getValue: (t) => (t.serviceType === "Airport" ? null : t.startTime),
+    defaultDir: "asc",
+  },
+  viewsBooked: {
+    type: "number",
+    getValue: (t) => t.viewedCount * 1_000_000 + t.bookedCount,
+    defaultDir: "desc",
+  },
+  price: { type: "number", getValue: (t) => t.price, defaultDir: "desc" },
+  status: {
+    type: "number",
+    getValue: (t) => (t.status === "active" ? 1 : 0),
+    defaultDir: "desc",
+  },
+};
+
 export default function TourCatalogView({
   tours,
   onToggleStatus,
@@ -82,6 +133,8 @@ export default function TourCatalogView({
     useState<Record<ColumnKey, boolean>>(DEFAULT_VISIBLE_COLUMNS);
   const [columnMenuOpen, setColumnMenuOpen] = useState(false);
   const columnMenuRef = useRef<HTMLDivElement>(null);
+  const [sortKey, setSortKey] = useState<SortableKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDirection>("asc");
 
   useEffect(() => {
     if (!columnMenuOpen) return;
@@ -96,6 +149,15 @@ export default function TourCatalogView({
 
   const toggleColumn = (key: ColumnKey) =>
     setVisibleColumns((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  const handleSort = (key: SortableKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir(SORT_CONFIG[key].defaultDir);
+    }
+  };
 
   const filtered = useMemo(() => {
     return tours.filter((t) => {
@@ -112,6 +174,28 @@ export default function TourCatalogView({
       return matchesSearch && matchesOffice && matchesStatus;
     });
   }, [tours, search, officeFilter, statusFilter]);
+
+  const sorted = useMemo(() => {
+    if (!sortKey) return filtered;
+    const config = SORT_CONFIG[sortKey];
+    return [...filtered].sort((a, b) => {
+      const va = config.getValue(a);
+      const vb = config.getValue(b);
+      const aEmpty = config.type === "number" ? va == null : !va;
+      const bEmpty = config.type === "number" ? vb == null : !vb;
+      if (aEmpty && bEmpty) return 0;
+      if (aEmpty) return 1;
+      if (bEmpty) return -1;
+      const cmp =
+        config.type === "number"
+          ? (va as number) - (vb as number)
+          : String(va).localeCompare(String(vb), undefined, {
+              numeric: true,
+              sensitivity: "base",
+            });
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [filtered, sortKey, sortDir]);
 
   const activeCount = tours.filter((t) => t.status === "active").length;
   const visibleCount =
@@ -193,23 +277,55 @@ export default function TourCatalogView({
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50/80">
               <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Name
+                <button
+                  type="button"
+                  onClick={() => handleSort("name")}
+                  className="inline-flex items-center gap-1 transition hover:text-gray-900"
+                >
+                  Name
+                  <SortIcon active={sortKey === "name"} dir={sortDir} />
+                </button>
               </th>
               {OPTIONAL_COLUMNS.filter((c) => visibleColumns[c.key]).map(
-                (c) => (
-                  <th
-                    key={c.key}
-                    className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500 ${
-                      c.key === "viewsBooked" ||
-                      c.key === "price" ||
-                      c.key === "preview"
-                        ? "text-right"
-                        : "text-left"
-                    }`}
-                  >
-                    {c.label}
-                  </th>
-                ),
+                (c) => {
+                  const rightAlign =
+                    c.key === "viewsBooked" ||
+                    c.key === "price" ||
+                    c.key === "preview";
+                  return (
+                    <th
+                      key={c.key}
+                      aria-sort={
+                        sortKey === c.key
+                          ? sortDir === "asc"
+                            ? "ascending"
+                            : "descending"
+                          : undefined
+                      }
+                      className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500 ${
+                        rightAlign ? "text-right" : "text-left"
+                      }`}
+                    >
+                      {c.key === "preview" ? (
+                        c.label
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSort(c.key as SortableKey)}
+                          className={`inline-flex items-center gap-1 transition hover:text-gray-900 ${
+                            rightAlign ? "flex-row-reverse" : ""
+                          }`}
+                        >
+                          {c.label}
+                          <SortIcon
+                            active={sortKey === c.key}
+                            dir={sortDir}
+                          />
+                        </button>
+                      )}
+                    </th>
+                  );
+                },
               )}
               <th className="w-10 px-2 py-2.5" aria-hidden="true" />
               <th className="relative w-10 px-2 py-2.5">
@@ -250,7 +366,7 @@ export default function TourCatalogView({
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {sorted.length === 0 ? (
               <tr>
                 <td
                   colSpan={visibleCount}
@@ -260,7 +376,7 @@ export default function TourCatalogView({
                 </td>
               </tr>
             ) : (
-              filtered.map((tour) => {
+              sorted.map((tour) => {
                 const active = tour.status === "active";
                 return (
                   <tr
