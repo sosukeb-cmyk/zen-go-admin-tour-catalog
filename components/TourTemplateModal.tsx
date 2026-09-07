@@ -15,8 +15,13 @@ import {
   X,
 } from "lucide-react";
 import type { DurationTier, TourTemplate, TourWaypoints } from "@/lib/types";
-import { DURATION_TIERS, OFFICE_LOCATIONS } from "@/lib/types";
-import { formatDuration, formatPrice } from "@/lib/tourUtils";
+import { DURATION_TIERS, OFFICE_LOCATIONS, SERVICE_TYPES } from "@/lib/types";
+import {
+  estimateRouteMetrics,
+  formatDuration,
+  formatPrice,
+  suggestedPriceForOffice,
+} from "@/lib/tourUtils";
 import MapLocationPicker from "@/components/booking/MapLocationPicker";
 import RouteMap from "@/components/booking/RouteMap";
 import VehiclePricingTable from "@/components/booking/VehiclePricingTable";
@@ -98,6 +103,24 @@ export default function TourTemplateModal({
     setSaveError(null);
   };
 
+  /** Once office + duration are both known, suggest a starting price — but
+   * only if nothing's been set yet, so it never clobbers a real price. */
+  const withSuggestedPrice = (
+    patch: Partial<TourTemplate>,
+  ): Partial<TourTemplate> => {
+    if (draft.price !== null) return patch;
+    const nextOffice = patch.officeLocation ?? draft.officeLocation;
+    const nextDuration = patch.durationTier ?? draft.durationTier;
+    if (!nextOffice || !nextDuration) return patch;
+    return {
+      ...patch,
+      price: suggestedPriceForOffice(
+        nextOffice,
+        nextDuration.startsWith("Half Day"),
+      ),
+    };
+  };
+
   const undo = () => {
     if (history.length === 0) return;
     const last = history[history.length - 1];
@@ -144,6 +167,7 @@ export default function TourTemplateModal({
       setSaveError(null);
       return;
     }
+    const metrics = estimateRouteMetrics(routeCopy);
     setHistory((h) => [
       ...h,
       { label: "Route updated", snapshot: structuredClone(draft) },
@@ -152,6 +176,8 @@ export default function TourTemplateModal({
       ...draft,
       waypoints: structuredClone(routeCopy),
       startTime: routeCopy.pickupTime,
+      tripDistanceKm: metrics?.distanceKm ?? null,
+      tripDurationMins: metrics?.durationMins ?? null,
     });
     setRouteEditing(false);
     setRouteCopy(null);
@@ -185,6 +211,18 @@ export default function TourTemplateModal({
       setSaveError("Give the template a trip name before saving.");
       return;
     }
+    if (!draft.serviceType) {
+      setSaveError("Select a service type before saving.");
+      return;
+    }
+    if (!draft.officeLocation) {
+      setSaveError("Select an office location before saving.");
+      return;
+    }
+    if (!draft.durationTier) {
+      setSaveError("Select a duration tier before saving.");
+      return;
+    }
     const hasMissingCustomPrice = draft.vehiclePricing?.rows.some(
       (row) => row.custom && !row.customPrice.trim(),
     );
@@ -203,7 +241,11 @@ export default function TourTemplateModal({
   };
 
   const wp = routeEditing && routeCopy ? routeCopy : draft.waypoints;
-  const canSave = !!draft.tripName.trim();
+  const canSave =
+    !!draft.tripName.trim() &&
+    !!draft.serviceType &&
+    !!draft.officeLocation &&
+    !!draft.durationTier;
   const dirty = baseline
     ? JSON.stringify(baseline) !== JSON.stringify(draft)
     : true;
@@ -327,8 +369,9 @@ export default function TourTemplateModal({
                 </button>
               </div>
               <p className="mt-0.5 truncate text-xs text-gray-400">
-                {draft.officeLocation} office · {draft.durationTier} · start{" "}
-                {draft.waypoints.pickupTime}
+                {draft.officeLocation && draft.durationTier
+                  ? `${draft.officeLocation} office · ${draft.durationTier} · start ${draft.waypoints.pickupTime}`
+                  : "Office and duration not set yet"}
               </p>
             </div>
           </div>
@@ -364,6 +407,29 @@ export default function TourTemplateModal({
             </p>
 
             <div>
+              <FieldLabel>Service Type</FieldLabel>
+              <div className="flex flex-wrap gap-1.5">
+                {SERVICE_TYPES.map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    disabled={locked}
+                    onClick={() =>
+                      commit("Service type selected", { serviceType: type })
+                    }
+                    className={`rounded-lg px-2.5 py-2 text-xs font-semibold transition disabled:cursor-default ${
+                      draft.serviceType === type
+                        ? "bg-[#121621] text-white"
+                        : `bg-white text-gray-600 ${locked ? "opacity-60" : "hover:bg-gray-100"} border border-gray-200`
+                    }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
               <FieldLabel>Trip Name</FieldLabel>
               <input
                 type="text"
@@ -378,13 +444,6 @@ export default function TourTemplateModal({
             </div>
 
             <div>
-              <FieldLabel>Service Type</FieldLabel>
-              <span className="inline-flex rounded-lg bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-700">
-                Sightseeing Charter
-              </span>
-            </div>
-
-            <div>
               <FieldLabel>Office Location</FieldLabel>
               <div className="grid grid-cols-2 gap-1.5">
                 {OFFICE_LOCATIONS.map((loc) => (
@@ -393,7 +452,10 @@ export default function TourTemplateModal({
                     type="button"
                     disabled={locked}
                     onClick={() =>
-                      commit("Office changed", { officeLocation: loc })
+                      commit(
+                        "Office changed",
+                        withSuggestedPrice({ officeLocation: loc }),
+                      )
                     }
                     className={`rounded-lg px-2.5 py-2 text-xs font-semibold transition disabled:cursor-default ${
                       draft.officeLocation === loc
@@ -416,9 +478,12 @@ export default function TourTemplateModal({
                     type="button"
                     disabled={locked}
                     onClick={() =>
-                      commit("Duration tier changed", {
-                        durationTier: tier as DurationTier,
-                      })
+                      commit(
+                        "Duration tier changed",
+                        withSuggestedPrice({
+                          durationTier: tier as DurationTier,
+                        }),
+                      )
                     }
                     className={`rounded-lg px-2.5 py-2 text-center text-xs font-semibold transition disabled:cursor-default ${
                       draft.durationTier === tier
@@ -441,56 +506,31 @@ export default function TourTemplateModal({
               <div className="rounded-lg border border-gray-200 bg-white px-2.5 py-2">
                 <p className="text-[11px] text-gray-400">Distance</p>
                 <p className="mt-0.5 text-sm font-bold tabular-nums text-gray-900">
-                  {draft.tripDistanceKm.toFixed(1)} km
+                  {draft.tripDistanceKm !== null
+                    ? `${draft.tripDistanceKm.toFixed(1)} km`
+                    : "--"}
                 </p>
               </div>
               <div className="rounded-lg border border-gray-200 bg-white px-2.5 py-2">
                 <p className="text-[11px] text-gray-400">Duration</p>
                 <p className="mt-0.5 text-sm font-bold tabular-nums text-gray-900">
-                  {formatDuration(draft.tripDurationMins)}
+                  {draft.tripDurationMins !== null
+                    ? formatDuration(draft.tripDurationMins)
+                    : "--"}
                 </p>
               </div>
               <div className="rounded-lg border border-[#121621] bg-[#121621] px-2.5 py-2">
                 <p className="text-[11px] text-white/50">Price</p>
                 <p className="mt-0.5 text-sm font-bold tabular-nums text-[#FACC15]">
-                  {formatPrice(draft.price)}
+                  {draft.price !== null ? formatPrice(draft.price) : "--"}
                 </p>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <FieldLabel>km</FieldLabel>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  readOnly={locked}
-                  value={draft.tripDistanceKm}
-                  onChange={(e) =>
-                    update({ tripDistanceKm: parseFloat(e.target.value) || 0 })
-                  }
-                  onFocus={onFieldFocus}
-                  onBlur={onFieldBlur}
-                  className={numFieldClass}
-                />
-              </div>
-              <div>
-                <FieldLabel>mins</FieldLabel>
-                <input
-                  type="number"
-                  min="0"
-                  readOnly={locked}
-                  value={draft.tripDurationMins}
-                  onChange={(e) =>
-                    update({
-                      tripDurationMins: parseInt(e.target.value, 10) || 0,
-                    })
-                  }
-                  onFocus={onFieldFocus}
-                  onBlur={onFieldBlur}
-                  className={numFieldClass}
-                />
-              </div>
+            {!draft.officeLocation || !draft.durationTier ? (
+              <p className="-mt-1 text-[11px] text-gray-400">
+                Select an office and duration tier to set a starting price.
+              </p>
+            ) : (
               <div>
                 <FieldLabel>¥</FieldLabel>
                 <input
@@ -498,7 +538,7 @@ export default function TourTemplateModal({
                   min="0"
                   step="1000"
                   readOnly={locked}
-                  value={draft.price}
+                  value={draft.price ?? 0}
                   onChange={(e) =>
                     update({ price: parseInt(e.target.value, 10) || 0 })
                   }
@@ -507,7 +547,13 @@ export default function TourTemplateModal({
                   className={numFieldClass}
                 />
               </div>
-            </div>
+            )}
+            {!draft.tripDistanceKm && !draft.tripDurationMins && (
+              <p className="-mt-1 text-[11px] text-gray-400">
+                Distance and duration are calculated once the route&apos;s
+                pick-up and drop-off pins are set.
+              </p>
+            )}
 
             <div className="h-px bg-gray-200" />
 
@@ -690,8 +736,10 @@ export default function TourTemplateModal({
                   <p className="text-xs text-gray-400">
                     {wp.stopovers.length} stopover
                     {wp.stopovers.length === 1 ? "" : "s"} ·{" "}
-                    {draft.tripDistanceKm.toFixed(1)} km ·{" "}
-                    {formatDuration(draft.tripDurationMins)}
+                    {draft.tripDistanceKm !== null
+                      ? `${draft.tripDistanceKm.toFixed(1)} km`
+                      : "--"}{" "}
+                    · {formatDuration(draft.tripDurationMins)}
                   </p>
                   <button
                     type="button"
@@ -903,13 +951,20 @@ export default function TourTemplateModal({
               {routeMapOpen && <RouteMap waypoints={draft.waypoints} />}
             </div>
 
-            <VehiclePricingTable
-              officeLocation={draft.officeLocation}
-              durationTier={draft.durationTier}
-              pricing={draft.vehiclePricing}
-              onChange={handleVehiclePricingChange}
-              locked={locked}
-            />
+            {draft.officeLocation && draft.durationTier ? (
+              <VehiclePricingTable
+                officeLocation={draft.officeLocation}
+                durationTier={draft.durationTier}
+                pricing={draft.vehiclePricing}
+                onChange={handleVehiclePricingChange}
+                locked={locked}
+              />
+            ) : (
+              <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/60 p-5 text-center text-xs text-gray-500">
+                Select an office and duration tier to see available vehicle
+                pricing.
+              </div>
+            )}
           </div>
         </div>
 

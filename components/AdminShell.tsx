@@ -36,10 +36,9 @@ export default function AdminShell() {
   );
 
   const openAdd = useCallback(() => {
-    const id = generateNextTourId(tours);
-    setModalTour(createEmptyTour(id));
+    setModalTour(createEmptyTour());
     setIsNewTour(true);
-  }, [tours]);
+  }, []);
 
   const handleToggleStatus = useCallback((id: string) => {
     setTours((prev) =>
@@ -53,16 +52,20 @@ export default function AdminShell() {
 
   const handleSave = useCallback(
     (saved: TourTemplate) => {
-      setTours((prev) => {
-        const exists = prev.some((t) => t.id === saved.id);
-        return exists
-          ? prev.map((t) => (t.id === saved.id ? saved : t))
-          : [...prev, saved];
-      });
-      setModalTour(saved);
+      if (isNewTour) {
+        const newId = generateNextTourId(tours);
+        const finalized: TourTemplate = { ...saved, id: newId, reference: newId };
+        setTours((prev) => [...prev, finalized]);
+        setModalTour(finalized);
+      } else {
+        setTours((prev) =>
+          prev.map((t) => (t.id === saved.id ? saved : t)),
+        );
+        setModalTour(saved);
+      }
       setIsNewTour(false);
     },
-    [],
+    [tours, isNewTour],
   );
 
   const handleRefresh = useCallback(() => {

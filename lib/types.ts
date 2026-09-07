@@ -44,25 +44,27 @@ export interface PreviewLinks {
   tourBooking: string;
 }
 
+export type ServiceType = "Sightseeing Charter";
+
 /** Core order fields shared with the orders pipeline. */
 export interface OrderDetail {
   reference: string;
   tripName: string;
-  officeLocation: OfficeLocation;
-  durationTier: DurationTier;
+  officeLocation: OfficeLocation | null;
+  durationTier: DurationTier | null;
   status: TourStatus;
-  price: number;
+  price: number | null;
   startTime: string;
   userName: string | null;
   userEmail: string | null;
   userSource: string | null;
   paymentStatus: string | null;
-  serviceType: "Sightseeing Charter";
+  serviceType: ServiceType | null;
   passengers: number | null;
   luggage: number | null;
   waypoints: TourWaypoints;
-  tripDistanceKm: number;
-  tripDurationMins: number;
+  tripDistanceKm: number | null;
+  tripDurationMins: number | null;
   previewLinks: PreviewLinks;
   driverName: string | null;
   plateNumber: string | null;
@@ -91,3 +93,5 @@ export const OFFICE_LOCATIONS: OfficeLocation[] = [
 ];
 
 export const DURATION_TIERS: DurationTier[] = ["Half Day 5hrs", "Full Day 10hrs"];
+
+export const SERVICE_TYPES: ServiceType[] = ["Sightseeing Charter"];

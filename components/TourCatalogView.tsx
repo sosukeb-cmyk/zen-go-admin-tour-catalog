@@ -99,7 +99,7 @@ export default function TourCatalogView({
         !q ||
         t.id.toLowerCase().includes(q) ||
         t.tripName.toLowerCase().includes(q) ||
-        t.officeLocation.toLowerCase().includes(q);
+        (t.officeLocation?.toLowerCase().includes(q) ?? false);
       const matchesOffice =
         officeFilter === "all" || t.officeLocation === officeFilter;
       const matchesStatus =

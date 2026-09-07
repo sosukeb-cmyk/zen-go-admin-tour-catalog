@@ -52,7 +52,7 @@ function buildFromSeed(slug: string): BookingItinerary | null {
     (sum, s) => sum + parseWaitMins(s.waitTime),
     0,
   );
-  const totalMins = tour.tripDurationMins;
+  const totalMins = tour.tripDurationMins ?? 0;
   const drivingMins = Math.max(totalMins - waitingMins, 0);
 
   return {
@@ -65,7 +65,7 @@ function buildFromSeed(slug: string): BookingItinerary | null {
       waitTime: s.waitTime || "None",
     })),
     defaultTime: tour.waypoints.pickupTime,
-    tripDistanceKm: tour.tripDistanceKm,
+    tripDistanceKm: tour.tripDistanceKm ?? 0,
     drivingMins,
     waitingMins,
     totalMins,
