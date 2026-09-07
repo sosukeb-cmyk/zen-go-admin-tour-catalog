@@ -42,6 +42,9 @@ interface TourTemplateModalProps {
   isNew: boolean;
   onClose: () => void;
   onSave: (tour: TourTemplate) => void;
+  /** Quick status flip — same instant, no-save-required action as the
+   * catalog table's row toggle, just reachable from in here too. */
+  onToggleStatus: (id: string) => void;
 }
 
 interface HistoryEntry {
@@ -65,6 +68,7 @@ export default function TourTemplateModal({
   isNew,
   onClose,
   onSave,
+  onToggleStatus,
 }: TourTemplateModalProps) {
   const [draft, setDraft] = useState<TourTemplate | null>(null);
   const [baseline, setBaseline] = useState<TourTemplate | null>(null);
@@ -195,6 +199,18 @@ export default function TourTemplateModal({
       { pickup: airport, pickupMapLocation: AIRPORT_MAP_LOCATIONS[airport] ?? null },
     );
     commit("Airport selected", patch);
+  };
+
+  /** Instant, no-save-required status flip — mirrors the catalog table's
+   * row toggle instead of going through the draft/commit/save pipeline,
+   * so it works even while the rest of the form is locked (view mode). */
+  const toggleStatusNow = () => {
+    const next = draft.status === "active" ? "inactive" : "active";
+    setDraft((prev) => (prev ? { ...prev, status: next } : prev));
+    if (!isNew) {
+      setBaseline((prev) => (prev ? { ...prev, status: next } : prev));
+      onToggleStatus(tour.id);
+    }
   };
 
   const undo = () => {
@@ -433,14 +449,9 @@ export default function TourTemplateModal({
                   type="button"
                   role="switch"
                   aria-checked={draft.status === "active"}
-                  disabled={locked}
-                  onClick={() =>
-                    commit(
-                      draft.status === "active" ? "Set inactive" : "Set active",
-                      { status: draft.status === "active" ? "inactive" : "active" },
-                    )
-                  }
-                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold transition disabled:cursor-default ${
+                  title="Toggle active status"
+                  onClick={toggleStatusNow}
+                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold transition hover:opacity-80 ${
                     draft.status === "active"
                       ? "bg-emerald-100 text-emerald-800"
                       : "bg-gray-100 text-gray-600"

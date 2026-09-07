@@ -113,6 +113,7 @@ export default function AdminShell() {
             setIsNewTour(false);
           }}
           onSave={handleSave}
+          onToggleStatus={handleToggleStatus}
         />
       )}
     </div>
