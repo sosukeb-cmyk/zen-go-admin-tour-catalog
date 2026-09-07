@@ -305,7 +305,11 @@ export default function TourCatalogView({
                     )}
                     {visibleColumns.start && (
                       <td className="px-4 py-3.5 tabular-nums text-gray-600">
-                        {tour.startTime}
+                        {tour.serviceType === "Airport" ? (
+                          <span className="text-gray-300">—</span>
+                        ) : (
+                          tour.startTime
+                        )}
                       </td>
                     )}
                     {visibleColumns.viewsBooked && (
