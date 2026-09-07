@@ -59,7 +59,7 @@ export default function AdminShell() {
           ? prev.map((t) => (t.id === saved.id ? saved : t))
           : [...prev, saved];
       });
-      setModalTour(null);
+      setModalTour(saved);
       setIsNewTour(false);
     },
     [],
