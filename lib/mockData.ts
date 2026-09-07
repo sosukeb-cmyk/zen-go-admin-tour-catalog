@@ -186,7 +186,7 @@ const AIRPORT_TRANSFER_LANDING_URL = "https://www.zengoride.com/airport-transfer
 
 function buildAirportPresetTours(): TourTemplate[] {
   return AIRPORT_ROUTE_DEFS.map((route, index) => {
-    const id = `A${String(index + 1).padStart(4, "0")}${route.office[0]}`;
+    const id = `#A${String(index + 1).padStart(4, "0")}${route.office[0]}`;
     const shortName = AIRPORT_SHORT_NAMES[route.airport] ?? route.airport;
     const tripName = `${shortName} to ${route.destination}`;
     const previewLinks = buildDefaultPreviewLinks(tripName, id);

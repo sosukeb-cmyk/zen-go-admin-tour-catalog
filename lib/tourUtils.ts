@@ -16,7 +16,7 @@ import type {
  * then the draft just shows a placeholder for whichever type is picked. */
 export const DRAFT_ID_PLACEHOLDER = "-----";
 export const DRAFT_ID_SIGHTSEEING = "#T-----";
-export const DRAFT_ID_AIRPORT = "A-----";
+export const DRAFT_ID_AIRPORT = "#A-----";
 
 export function draftIdForServiceType(type: ServiceType | null): string {
   if (type === "Sightseeing Charter") return DRAFT_ID_SIGHTSEEING;
@@ -70,7 +70,7 @@ export function slugifyTripName(name: string): string {
 export function tourIdToBookingSequence(id: string): string {
   const sightseeing = id.match(/#T(\d{4})A/);
   if (sightseeing) return sightseeing[1];
-  const airport = id.match(/^A(\d{4})/);
+  const airport = id.match(/^#A(\d{4})/);
   if (airport) return airport[1];
   return "0001";
 }
@@ -138,8 +138,8 @@ export function generateNextSightseeingId(tours: TourTemplate[]): string {
   return `#T${String(next).padStart(4, "0")}A`;
 }
 
-/** Airport SKUs: A + 4-digit sequence (its own, independent of the
- * Sightseeing sequence) + the office's first letter, e.g. "A0002T" for
+/** Airport SKUs: # + A + 4-digit sequence (its own, independent of the
+ * Sightseeing sequence) + the office's first letter, e.g. "#A0002T" for
  * the 2nd airport template ever created, saved with a Tokyo office. */
 export function generateNextAirportId(
   tours: TourTemplate[],
@@ -147,13 +147,13 @@ export function generateNextAirportId(
 ): string {
   const numbers = tours
     .map((t) => {
-      const match = t.id.match(/^A(\d{4})/);
+      const match = t.id.match(/^#A(\d{4})/);
       return match ? parseInt(match[1], 10) : 0;
     })
     .filter((n) => n > 0);
 
   const next = numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
-  return `A${String(next).padStart(4, "0")}${office[0].toUpperCase()}`;
+  return `#A${String(next).padStart(4, "0")}${office[0].toUpperCase()}`;
 }
 
 export function createEmptyTour(): TourTemplate {
