@@ -496,7 +496,7 @@ export default function TourTemplateModal({
               <p className="mt-0.5 truncate text-xs text-gray-400">
                 {draft.serviceType === "Sightseeing Charter" &&
                 draft.officeLocation
-                  ? `${draft.officeLocation} office${
+                  ? `${draft.officeLocation} office · Sightseeing Charter${
                       draft.durationTier
                         ? ` · ${draft.durationTier} · start ${draft.waypoints.pickupTime}`
                         : ""
