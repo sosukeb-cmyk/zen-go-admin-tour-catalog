@@ -6,6 +6,8 @@ import {
   ArrowUp,
   ArrowUpDown,
   CalendarClock,
+  Check,
+  ChevronDown,
   Globe,
   Plus,
   RefreshCw,
@@ -36,14 +38,6 @@ function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
   ) : (
     <ArrowDown className="h-3 w-3 text-gray-900" />
   );
-}
-
-function pillClass(active: boolean) {
-  return `rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-    active
-      ? "bg-[#121621] text-white"
-      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-  }`;
 }
 
 type ColumnKey =
@@ -125,9 +119,9 @@ export default function TourCatalogView({
 }: TourCatalogViewProps) {
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<TourTemplate | null>(null);
-  const [officeFilter, setOfficeFilter] = useState<OfficeLocation | "all">(
-    "all",
-  );
+  const [officeFilter, setOfficeFilter] = useState<OfficeLocation[]>([]);
+  const [officeMenuOpen, setOfficeMenuOpen] = useState(false);
+  const officeMenuRef = useRef<HTMLDivElement>(null);
   const [statusFilter, setStatusFilter] = useState<TourStatus | "all">("all");
   const [visibleColumns, setVisibleColumns] =
     useState<Record<ColumnKey, boolean>>(DEFAULT_VISIBLE_COLUMNS);
@@ -147,8 +141,31 @@ export default function TourCatalogView({
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [columnMenuOpen]);
 
+  useEffect(() => {
+    if (!officeMenuOpen) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (!officeMenuRef.current?.contains(e.target as Node)) {
+        setOfficeMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [officeMenuOpen]);
+
   const toggleColumn = (key: ColumnKey) =>
     setVisibleColumns((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  const toggleOfficeFilter = (o: OfficeLocation) =>
+    setOfficeFilter((prev) =>
+      prev.includes(o) ? prev.filter((x) => x !== o) : [...prev, o],
+    );
+
+  const officeFilterLabel =
+    officeFilter.length === 0
+      ? "All offices"
+      : officeFilter.length === 1
+        ? officeFilter[0]
+        : `${officeFilter.length} offices`;
 
   const handleSort = (key: SortableKey) => {
     if (sortKey === key) {
@@ -168,7 +185,8 @@ export default function TourCatalogView({
         t.tripName.toLowerCase().includes(q) ||
         (t.officeLocation?.toLowerCase().includes(q) ?? false);
       const matchesOffice =
-        officeFilter === "all" || t.officeLocation === officeFilter;
+        officeFilter.length === 0 ||
+        (t.officeLocation !== null && officeFilter.includes(t.officeLocation));
       const matchesStatus =
         statusFilter === "all" || t.status === statusFilter;
       return matchesSearch && matchesOffice && matchesStatus;
@@ -245,28 +263,71 @@ export default function TourCatalogView({
           />
         </div>
         <div className="h-6 w-px bg-gray-200" />
-        <div className="flex flex-wrap items-center gap-1.5">
-          {(["all", ...OFFICE_LOCATIONS] as const).map((o) => (
-            <button
-              key={o}
-              type="button"
-              onClick={() => setOfficeFilter(o)}
-              className={pillClass(officeFilter === o)}
-            >
-              {o === "all" ? "All offices" : o}
-            </button>
-          ))}
+        <div ref={officeMenuRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setOfficeMenuOpen((v) => !v)}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+              officeFilter.length > 0
+                ? "bg-[#121621] text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            {officeFilterLabel}
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+          {officeMenuOpen && (
+            <div className="absolute left-0 top-full z-20 mt-1.5 w-44 rounded-lg border border-gray-200 bg-white p-1.5 shadow-lg">
+              <button
+                type="button"
+                onClick={() => setOfficeFilter([])}
+                className="mb-1 flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-50"
+              >
+                All offices
+                {officeFilter.length === 0 && (
+                  <Check className="h-3.5 w-3.5 text-gray-900" />
+                )}
+              </button>
+              <div className="my-1 h-px bg-gray-100" />
+              {OFFICE_LOCATIONS.map((o) => (
+                <label
+                  key={o}
+                  className="flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-normal text-gray-700 hover:bg-gray-50"
+                >
+                  <input
+                    type="checkbox"
+                    checked={officeFilter.includes(o)}
+                    onChange={() => toggleOfficeFilter(o)}
+                    className="rounded border-gray-300"
+                  />
+                  {o}
+                </label>
+              ))}
+            </div>
+          )}
         </div>
         <div className="h-6 w-px bg-gray-200" />
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="relative inline-flex items-center rounded-full bg-gray-100 p-1 text-xs font-semibold">
+          <span
+            className="absolute inset-y-1 w-[58px] rounded-full bg-[#121621] shadow-sm transition-transform duration-200 ease-out"
+            style={{
+              transform: `translateX(${
+                statusFilter === "all" ? 0 : statusFilter === "active" ? 58 : 116
+              }px)`,
+            }}
+          />
           {(["all", "active", "inactive"] as const).map((st) => (
             <button
               key={st}
               type="button"
               onClick={() => setStatusFilter(st)}
-              className={pillClass(statusFilter === st)}
+              className={`relative z-10 w-[58px] rounded-full py-1.5 text-center transition-colors ${
+                statusFilter === st
+                  ? "text-white"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
             >
-              {st === "all" ? "Any status" : st === "active" ? "Active" : "Inactive"}
+              {st === "all" ? "All" : st === "active" ? "Active" : "Inactive"}
             </button>
           ))}
         </div>
