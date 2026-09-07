@@ -30,6 +30,7 @@ function pillClass(active: boolean) {
 }
 
 type ColumnKey =
+  | "serviceType"
   | "office"
   | "duration"
   | "start"
@@ -39,6 +40,7 @@ type ColumnKey =
   | "preview";
 
 const OPTIONAL_COLUMNS: { key: ColumnKey; label: string }[] = [
+  { key: "serviceType", label: "Service Type" },
   { key: "office", label: "Office" },
   { key: "duration", label: "Duration" },
   { key: "start", label: "Start" },
@@ -49,6 +51,7 @@ const OPTIONAL_COLUMNS: { key: ColumnKey; label: string }[] = [
 ];
 
 const DEFAULT_VISIBLE_COLUMNS: Record<ColumnKey, boolean> = {
+  serviceType: true,
   office: true,
   duration: true,
   start: true,
@@ -269,6 +272,13 @@ export default function TourCatalogView({
                         </span>
                       </div>
                     </td>
+                    {visibleColumns.serviceType && (
+                      <td className="px-4 py-3.5">
+                        <span className="inline-flex whitespace-nowrap rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                          {tour.serviceType}
+                        </span>
+                      </td>
+                    )}
                     {visibleColumns.office && (
                       <td className="px-4 py-3.5 text-gray-700">
                         {tour.officeLocation}
