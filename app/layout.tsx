@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Zen Go Admin Console — Tour Catalog",
-  description: "Interactive prototype for the Tour Catalog feature",
+  title: "Zen Go Admin Console — Catalog",
+  description: "Interactive prototype for the Catalog feature",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

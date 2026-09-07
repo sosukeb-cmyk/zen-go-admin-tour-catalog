@@ -114,7 +114,7 @@ export default function TourCatalogView({
       <div className="flex flex-wrap items-end justify-between gap-5">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight text-gray-900">
-            Tour Catalog
+            Catalog
           </h1>
           <p className="mt-1.5 text-sm text-gray-500">
             {tours.length} templates · {activeCount} active ·{" "}
@@ -136,7 +136,7 @@ export default function TourCatalogView({
             className="inline-flex h-[38px] items-center gap-2 rounded-lg bg-[#FACC15] px-[18px] text-sm font-semibold text-[#121621] transition hover:bg-[#eab308]"
           >
             <Plus className="h-4 w-4" />
-            Add Tour
+            Add Template
           </button>
         </div>
       </div>
@@ -185,7 +185,7 @@ export default function TourCatalogView({
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50/80">
               <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Tour
+                Name
               </th>
               {OPTIONAL_COLUMNS.filter((c) => visibleColumns[c.key]).map(
                 (c) => (

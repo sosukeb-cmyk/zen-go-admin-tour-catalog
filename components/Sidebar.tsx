@@ -17,7 +17,7 @@ const NAV_ITEMS: { id: NavView; label: string; icon: typeof Map }[] = [
   { id: "orders", label: "Orders", icon: ClipboardList },
   { id: "pricing-cms", label: "Pricing CMS", icon: DollarSign },
   { id: "dispatch-board", label: "Dispatch Board", icon: LayoutDashboard },
-  { id: "tour-catalog", label: "Tour Catalog", icon: Map },
+  { id: "tour-catalog", label: "Catalog", icon: Map },
 ];
 
 export default function Sidebar({ activeView, onNavigate }: SidebarProps) {
