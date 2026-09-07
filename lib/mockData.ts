@@ -1,6 +1,8 @@
-import type { TourTemplate } from "./types";
+import { AIRPORT_MAP_LOCATIONS } from "./mapLocationMock";
+import { airportDisplayName, buildDefaultPreviewLinks } from "./tourUtils";
+import type { OfficeLocation, TourTemplate } from "./types";
 
-export const SEED_TOURS: TourTemplate[] = [
+const SIGHTSEEING_SEED_TOURS: TourTemplate[] = [
   {
     id: "#T0001A",
     reference: "#T0001A",
@@ -119,4 +121,93 @@ export const SEED_TOURS: TourTemplate[] = [
     useDefaultPrice: true,
     vehiclePricing: null,
   },
+];
+
+/** The "Popular Airport Transfer Routes" cards on zengoride.com/airport-transfer
+ * — one preset per airport → destination listed there, so each can carry a
+ * prefilled booking-page link the way the Sightseeing tours already do. */
+interface AirportRouteDef {
+  airport: string;
+  office: OfficeLocation;
+  destination: string;
+  priceUsd: number;
+}
+
+const AIRPORT_ROUTE_DEFS: AirportRouteDef[] = [
+  { airport: "Narita Airport", office: "Tokyo", destination: "Tokyo (23 Wards)", priceUsd: 116 },
+  { airport: "Narita Airport", office: "Tokyo", destination: "Yokohama (Central)", priceUsd: 153 },
+  { airport: "Narita Airport", office: "Tokyo", destination: "Chiba City", priceUsd: 60 },
+  { airport: "Narita Airport", office: "Tokyo", destination: "Disneyland Resort", priceUsd: 100 },
+  { airport: "Haneda Airport", office: "Tokyo", destination: "Tokyo (23 Wards)", priceUsd: 73 },
+  { airport: "Haneda Airport", office: "Tokyo", destination: "Yokohama", priceUsd: 68 },
+  { airport: "Haneda Airport", office: "Tokyo", destination: "Kawasaki", priceUsd: 65 },
+  { airport: "Haneda Airport", office: "Tokyo", destination: "Chiba City", priceUsd: 120 },
+  { airport: "Kansai Airport", office: "Osaka", destination: "Osaka City", priceUsd: 85 },
+  { airport: "Kansai Airport", office: "Osaka", destination: "Kyoto City", priceUsd: 122 },
+  { airport: "Kansai Airport", office: "Osaka", destination: "Wakayama City", priceUsd: 153 },
+  { airport: "Kansai Airport", office: "Osaka", destination: "Universal Studios Osaka", priceUsd: 85 },
+  { airport: "Chubu Centrair Airport", office: "Nagoya", destination: "Nagoya City (16 Wards)", priceUsd: 85 },
+  { airport: "Chubu Centrair Airport", office: "Nagoya", destination: "Lego Land", priceUsd: 73 },
+  { airport: "Chubu Centrair Airport", office: "Nagoya", destination: "Nagashima Spa Land", priceUsd: 100 },
+  { airport: "Chubu Centrair Airport", office: "Nagoya", destination: "Ghibli Park", priceUsd: 85 },
+  { airport: "Osaka Itami Airport", office: "Osaka", destination: "Osaka City", priceUsd: 70 },
+  { airport: "Osaka Itami Airport", office: "Osaka", destination: "Kyoto City", priceUsd: 92 },
+  { airport: "Osaka Itami Airport", office: "Osaka", destination: "Kobe City", priceUsd: 85 },
+  { airport: "Osaka Itami Airport", office: "Osaka", destination: "Wakayama City", priceUsd: 170 },
+  { airport: "New Chitose Airport", office: "Sapporo", destination: "Sapporo City", priceUsd: 140 },
+  { airport: "New Chitose Airport", office: "Sapporo", destination: "Lake Toya / Niseko / Kiroro", priceUsd: 215 },
+  { airport: "New Chitose Airport", office: "Sapporo", destination: "Furano / Biei", priceUsd: 240 },
+  { airport: "New Chitose Airport", office: "Sapporo", destination: "Noboribetsu Onsen", priceUsd: 177 },
+];
+
+/** Rough, non-authoritative reference rate — the site shows USD, our
+ * pricing is all in ¥, and this keeps the preset prices in the same
+ * ballpark as the Airport Price CMS's fixed fees for the same airports. */
+const USD_TO_JPY = 150;
+
+function buildAirportPresetTours(): TourTemplate[] {
+  return AIRPORT_ROUTE_DEFS.map((route, index) => {
+    const id = `A${String(index + 1).padStart(4, "0")}${route.office[0]}`;
+    const tripName = `${route.airport} → ${route.destination}`;
+    return {
+      id,
+      reference: id,
+      tripName,
+      officeLocation: route.office,
+      durationTier: null,
+      status: "active",
+      price: Math.round((route.priceUsd * USD_TO_JPY) / 100) * 100,
+      startTime: "09:00",
+      viewedCount: 0,
+      bookedCount: 0,
+      userName: null,
+      userEmail: null,
+      userSource: null,
+      paymentStatus: null,
+      serviceType: "Airport",
+      airport: route.airport,
+      passengers: null,
+      luggage: null,
+      waypoints: {
+        pickup: airportDisplayName(route.airport),
+        pickupTime: "09:00",
+        pickupMapLocation: AIRPORT_MAP_LOCATIONS[route.airport] ?? null,
+        stopovers: [],
+        dropoff: route.destination,
+        dropoffMapLocation: null,
+      },
+      tripDistanceKm: null,
+      tripDurationMins: null,
+      previewLinks: buildDefaultPreviewLinks(tripName, id),
+      driverName: null,
+      plateNumber: null,
+      useDefaultPrice: true,
+      vehiclePricing: null,
+    };
+  });
+}
+
+export const SEED_TOURS: TourTemplate[] = [
+  ...SIGHTSEEING_SEED_TOURS,
+  ...buildAirportPresetTours(),
 ];

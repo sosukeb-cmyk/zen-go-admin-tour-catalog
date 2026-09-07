@@ -68,8 +68,11 @@ export function slugifyTripName(name: string): string {
 }
 
 export function tourIdToBookingSequence(id: string): string {
-  const match = id.match(/#T(\d{4})A/);
-  return match ? match[1] : "0001";
+  const sightseeing = id.match(/#T(\d{4})A/);
+  if (sightseeing) return sightseeing[1];
+  const airport = id.match(/^A(\d{4})/);
+  if (airport) return airport[1];
+  return "0001";
 }
 
 export function formatBookingDate(date = new Date()): string {
