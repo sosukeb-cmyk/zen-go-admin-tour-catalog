@@ -86,13 +86,19 @@ export function buildDefaultTourDetailsUrl(slug: string): string {
   return `https://www.zengoride.com/tours/${slug || "new-tour"}`;
 }
 
+/** Demo-only: an ngrok tunnel onto this app's own booking-page mockup, so
+ * the "Booking" preview link is a real, shareable URL instead of a path
+ * that only resolves from inside the app itself. Not for production use —
+ * ngrok free-tier URLs are ephemeral and will need updating when it changes. */
+const DEMO_BOOKING_ORIGIN = "https://exert-hula-resilient.ngrok-free.dev";
+
 export function buildDefaultTourBookingUrl(
   slug: string,
   tourId: string,
   date = new Date(),
 ): string {
   const seq = tourIdToBookingSequence(tourId);
-  return `/tours/${slug || "new-tour"}/${seq}/${formatBookingDate(date)}`;
+  return `${DEMO_BOOKING_ORIGIN}/tours/${slug || "new-tour"}/${seq}/${formatBookingDate(date)}`;
 }
 
 export function buildDefaultPreviewLinks(

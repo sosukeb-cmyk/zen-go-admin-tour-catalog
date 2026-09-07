@@ -36,7 +36,7 @@ const SIGHTSEEING_SEED_TOURS: TourTemplate[] = [
     previewLinks: {
       tourDetails:
         "https://www.zengoride.com/tours/autumn-foliage-deer-paths",
-      tourBooking: "/tours/autumn-foliage-deer-paths/00001/2026-09-02",
+      tourBooking: "https://exert-hula-resilient.ngrok-free.dev/tours/autumn-foliage-deer-paths/00001/2026-09-02",
     },
     driverName: null,
     plateNumber: null,
@@ -75,7 +75,7 @@ const SIGHTSEEING_SEED_TOURS: TourTemplate[] = [
     tripDurationMins: 300,
     previewLinks: {
       tourDetails: "https://www.zengoride.com/tours/buddha-by-the-beach",
-      tourBooking: "/tours/buddha-by-the-beach/00002/2026-09-02",
+      tourBooking: "https://exert-hula-resilient.ngrok-free.dev/tours/buddha-by-the-beach/00002/2026-09-02",
     },
     driverName: null,
     plateNumber: null,
@@ -114,7 +114,7 @@ const SIGHTSEEING_SEED_TOURS: TourTemplate[] = [
     tripDurationMins: 600,
     previewLinks: {
       tourDetails: "https://www.zengoride.com/tours/flavors-of-edo",
-      tourBooking: "/tours/flavors-of-edo/00003/2026-09-02",
+      tourBooking: "https://exert-hula-resilient.ngrok-free.dev/tours/flavors-of-edo/00003/2026-09-02",
     },
     driverName: null,
     plateNumber: null,
@@ -165,10 +165,28 @@ const AIRPORT_ROUTE_DEFS: AirportRouteDef[] = [
  * ballpark as the Airport Price CMS's fixed fees for the same airports. */
 const USD_TO_JPY = 150;
 
+/** Short, recognizable names for trip titles — e.g. "Narita to Tokyo (23
+ * Wards)" instead of "Narita Airport → Tokyo (23 Wards)". */
+const AIRPORT_SHORT_NAMES: Record<string, string> = {
+  "Narita Airport": "Narita",
+  "Haneda Airport": "Haneda",
+  "Kansai Airport": "Kansai",
+  "Osaka Itami Airport": "Itami",
+  "Chubu Centrair Airport": "Centrair",
+  "New Chitose Airport": "Chitose",
+};
+
+/** No dedicated per-route details page exists on the marketing site yet —
+ * every Airport preset's "tour details" link points at the general
+ * routes page these presets were seeded from. */
+const AIRPORT_TRANSFER_LANDING_URL = "https://www.zengoride.com/airport-transfer";
+
 function buildAirportPresetTours(): TourTemplate[] {
   return AIRPORT_ROUTE_DEFS.map((route, index) => {
     const id = `A${String(index + 1).padStart(4, "0")}${route.office[0]}`;
-    const tripName = `${route.airport} → ${route.destination}`;
+    const shortName = AIRPORT_SHORT_NAMES[route.airport] ?? route.airport;
+    const tripName = `${shortName} to ${route.destination}`;
+    const previewLinks = buildDefaultPreviewLinks(tripName, id);
     return {
       id,
       reference: id,
@@ -198,7 +216,10 @@ function buildAirportPresetTours(): TourTemplate[] {
       },
       tripDistanceKm: null,
       tripDurationMins: null,
-      previewLinks: buildDefaultPreviewLinks(tripName, id),
+      previewLinks: {
+        tourDetails: AIRPORT_TRANSFER_LANDING_URL,
+        tourBooking: previewLinks.tourBooking,
+      },
       driverName: null,
       plateNumber: null,
       useDefaultPrice: true,
