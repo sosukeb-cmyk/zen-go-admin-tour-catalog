@@ -138,6 +138,17 @@ export const OFFICE_AIRPORTS: Record<PricingOffice, string[]> = {
   Sapporo: ["New Chitose Airport"],
 };
 
+/** IATA codes for display only — the airport name itself (used as the
+ * data key for pricing legs, OFFICE_AIRPORTS, etc.) never changes. */
+export const AIRPORT_CODES: Record<string, string> = {
+  "Narita Airport": "NRT",
+  "Haneda Airport": "HND",
+  "Kansai Airport": "KIX",
+  "Osaka Itami Airport": "ITM",
+  "Chubu Centrair Airport": "NGO",
+  "New Chitose Airport": "CTS",
+};
+
 export const AIRPORT_DISTANCE_CAP_KM: Record<string, number> = {
   "Narita Airport": 85,
   "Haneda Airport": 35,

@@ -1,5 +1,9 @@
 import { AIRPORT_MAP_LOCATIONS, type MapLocation } from "./mapLocationMock";
-import { OFFICE_AIRPORTS, SIGHTSEEING_PRICE_SEED } from "./pricingCmsMock";
+import {
+  AIRPORT_CODES,
+  OFFICE_AIRPORTS,
+  SIGHTSEEING_PRICE_SEED,
+} from "./pricingCmsMock";
 import type {
   OfficeLocation,
   ServiceType,
@@ -26,6 +30,13 @@ export function serviceTypeBadgeClasses(type: ServiceType | null): string {
   return "bg-gray-100 text-gray-500";
 }
 
+/** Display-only label with the IATA code, e.g. "Narita Airport (NRT)" — the
+ * airport name itself (used as the data key everywhere else) is unchanged. */
+export function airportDisplayName(airport: string): string {
+  const code = AIRPORT_CODES[airport];
+  return code ? `${airport} (${code})` : airport;
+}
+
 /** For an Airport-service template: which airport(s) serve this office, and
  * — when there's only one candidate — the pickup spot that resolves to
  * automatically. Offices with more than one airport (Tokyo, Osaka) return
@@ -41,7 +52,7 @@ export function resolveAirportPickup(office: OfficeLocation | null): {
     const airport = airports[0];
     return {
       airport,
-      pickup: airport,
+      pickup: airportDisplayName(airport),
       pickupMapLocation: AIRPORT_MAP_LOCATIONS[airport] ?? null,
     };
   }

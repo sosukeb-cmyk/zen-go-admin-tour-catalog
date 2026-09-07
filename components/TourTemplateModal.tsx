@@ -23,6 +23,7 @@ import type {
 } from "@/lib/types";
 import { DURATION_TIERS, OFFICE_LOCATIONS, SERVICE_TYPES } from "@/lib/types";
 import {
+  airportDisplayName,
   draftIdForServiceType,
   estimateRouteMetrics,
   formatDuration,
@@ -196,7 +197,10 @@ export default function TourTemplateModal({
   const selectAirport = (airport: string) => {
     const patch = applyPickupResolution(
       { airport },
-      { pickup: airport, pickupMapLocation: AIRPORT_MAP_LOCATIONS[airport] ?? null },
+      {
+        pickup: airportDisplayName(airport),
+        pickupMapLocation: AIRPORT_MAP_LOCATIONS[airport] ?? null,
+      },
     );
     commit("Airport selected", patch);
   };
@@ -402,7 +406,7 @@ export default function TourTemplateModal({
       badge: "Pick-up",
       tone: "green",
       name: draft.waypoints.pickup,
-      meta: draft.waypoints.pickupTime,
+      meta: draft.serviceType === "Airport" ? "" : draft.waypoints.pickupTime,
       pin: draft.waypoints.pickupMapLocation,
     },
     ...draft.waypoints.stopovers.map((s, i) => ({
@@ -472,8 +476,10 @@ export default function TourTemplateModal({
                   ? `${draft.officeLocation} office · ${draft.durationTier} · start ${draft.waypoints.pickupTime}`
                   : draft.serviceType === "Airport" && draft.officeLocation
                     ? `${draft.officeLocation} office · Airport transfer${
-                        draft.airport ? ` · ${draft.airport}` : ""
-                      } · start ${draft.waypoints.pickupTime}`
+                        draft.airport
+                          ? ` · ${airportDisplayName(draft.airport)}`
+                          : ""
+                      }`
                     : "Service type and office not set yet"}
               </p>
             </div>
@@ -586,7 +592,7 @@ export default function TourTemplateModal({
                             : `bg-white text-gray-600 ${locked ? "opacity-60" : "hover:bg-gray-100"} border border-gray-200`
                         }`}
                       >
-                        {airport}
+                        {airportDisplayName(airport)}
                       </button>
                     ))}
                   </div>
@@ -963,15 +969,19 @@ export default function TourTemplateModal({
                           className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
                         />
                       </div>
-                      <div>
-                        <FieldLabel>Time</FieldLabel>
-                        <input
-                          type="time"
-                          value={wp.pickupTime}
-                          onChange={(e) => updateRouteCopy({ pickupTime: e.target.value })}
-                          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
-                        />
-                      </div>
+                      {draft.serviceType === "Airport" ? (
+                        <div aria-hidden="true" />
+                      ) : (
+                        <div>
+                          <FieldLabel>Time</FieldLabel>
+                          <input
+                            type="time"
+                            value={wp.pickupTime}
+                            onChange={(e) => updateRouteCopy({ pickupTime: e.target.value })}
+                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                          />
+                        </div>
+                      )}
                       <MapLocationPicker
                         theme="light"
                         size="compact"
