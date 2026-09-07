@@ -191,6 +191,7 @@ export function createEmptyTour(): TourTemplate {
     plateNumber: null,
     useDefaultPrice: true,
     vehiclePricing: null,
+    airportVehiclePricing: null,
   };
 }
 

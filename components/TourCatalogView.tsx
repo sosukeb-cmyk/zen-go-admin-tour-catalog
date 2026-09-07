@@ -349,7 +349,7 @@ export default function TourCatalogView({
                                 "noopener,noreferrer",
                               );
                             }}
-                            className="rounded p-1.5 text-gray-400 transition hover:bg-blue-50 hover:text-blue-600"
+                            className="rounded p-1.5 text-blue-500 transition hover:bg-blue-50 hover:text-blue-600"
                           >
                             <Globe className="h-4 w-4" />
                           </button>
@@ -364,7 +364,7 @@ export default function TourCatalogView({
                                 "noopener,noreferrer",
                               );
                             }}
-                            className="rounded p-1.5 text-gray-400 transition hover:bg-violet-50 hover:text-violet-600"
+                            className="rounded p-1.5 text-violet-500 transition hover:bg-violet-50 hover:text-violet-600"
                           >
                             <CalendarClock className="h-4 w-4" />
                           </button>

@@ -19,6 +19,23 @@ export interface TourVehiclePricing {
   rows: TourVehiclePriceRow[];
 }
 
+export interface AirportVehiclePriceRow {
+  vehicleType: string;
+  vehicleName: string;
+  owner: string;
+  fixedFee: number;
+  distanceCapKm: number;
+  excessRatePerKm: number;
+  custom: boolean;
+  customPrice: string;
+}
+
+export interface AirportVehiclePricing {
+  office: OfficeLocation;
+  airport: string;
+  rows: AirportVehiclePriceRow[];
+}
+
 export interface MapLocationRef {
   title: string;
   address: string;
@@ -73,6 +90,7 @@ export interface OrderDetail {
   plateNumber: string | null;
   useDefaultPrice: boolean;
   vehiclePricing: TourVehiclePricing | null;
+  airportVehiclePricing: AirportVehiclePricing | null;
 }
 
 /** Catalog template extending OrderDetail with catalog-specific metrics. */

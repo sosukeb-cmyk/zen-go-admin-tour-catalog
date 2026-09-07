@@ -42,6 +42,7 @@ const SIGHTSEEING_SEED_TOURS: TourTemplate[] = [
     plateNumber: null,
     useDefaultPrice: true,
     vehiclePricing: null,
+    airportVehiclePricing: null,
   },
   {
     id: "#T0002A",
@@ -81,6 +82,7 @@ const SIGHTSEEING_SEED_TOURS: TourTemplate[] = [
     plateNumber: null,
     useDefaultPrice: true,
     vehiclePricing: null,
+    airportVehiclePricing: null,
   },
   {
     id: "#T0003A",
@@ -120,6 +122,7 @@ const SIGHTSEEING_SEED_TOURS: TourTemplate[] = [
     plateNumber: null,
     useDefaultPrice: true,
     vehiclePricing: null,
+    airportVehiclePricing: null,
   },
 ];
 
@@ -224,6 +227,7 @@ function buildAirportPresetTours(): TourTemplate[] {
       plateNumber: null,
       useDefaultPrice: true,
       vehiclePricing: null,
+      airportVehiclePricing: null,
     };
   });
 }

@@ -36,6 +36,7 @@ import { OFFICE_AIRPORTS } from "@/lib/pricingCmsMock";
 import MapLocationPicker from "@/components/booking/MapLocationPicker";
 import RouteMap from "@/components/booking/RouteMap";
 import VehiclePricingTable from "@/components/booking/VehiclePricingTable";
+import AirportVehiclePricingTable from "@/components/booking/AirportVehiclePricingTable";
 import { AIRPORT_MAP_LOCATIONS, type MapLocation } from "@/lib/mapLocationMock";
 
 interface TourTemplateModalProps {
@@ -102,7 +103,9 @@ export default function TourTemplateModal({
 
   /** A real, save-worthy change: either an undo-tracked edit, or an active
    * custom price override (setting one doesn't itself push undo history). */
-  const hasCustomOverride = !!draft.vehiclePricing?.rows.some((r) => r.custom);
+  const hasCustomOverride =
+    !!draft.vehiclePricing?.rows.some((r) => r.custom) ||
+    !!draft.airportVehiclePricing?.rows.some((r) => r.custom);
   const hasEdits = history.length > 0 || hasCustomOverride;
 
   const update = (patch: Partial<TourTemplate>) =>
@@ -173,6 +176,7 @@ export default function TourTemplateModal({
       reference: newId,
       price: null,
       vehiclePricing: null,
+      airportVehiclePricing: null,
     };
     if (type === "Sightseeing Charter") {
       patch = { ...patch, airport: null };
@@ -302,6 +306,16 @@ export default function TourTemplateModal({
     }
   };
 
+  const handleAirportVehiclePricingChange: React.ComponentProps<
+    typeof AirportVehiclePricingTable
+  >["onChange"] = (pricing) => {
+    if (pricing === null && draft.airportVehiclePricing) {
+      commit("Vehicle prices cleared", { airportVehiclePricing: null });
+    } else {
+      update({ airportVehiclePricing: pricing });
+    }
+  };
+
   const handleSave = () => {
     if (!draft.tripName.trim()) {
       setSaveError("Give the template a trip name before saving.");
@@ -323,9 +337,13 @@ export default function TourTemplateModal({
       setSaveError("Select an airport before saving.");
       return;
     }
-    const hasMissingCustomPrice = draft.vehiclePricing?.rows.some(
-      (row) => row.custom && !row.customPrice.trim(),
-    );
+    const hasMissingCustomPrice =
+      draft.vehiclePricing?.rows.some(
+        (row) => row.custom && !row.customPrice.trim(),
+      ) ||
+      draft.airportVehiclePricing?.rows.some(
+        (row) => row.custom && !row.customPrice.trim(),
+      );
     if (hasMissingCustomPrice) {
       setSaveError(
         "Set a custom price for every vehicle with Custom turned on, or turn Custom off.",
@@ -446,7 +464,7 @@ export default function TourTemplateModal({
                   className="truncate text-[17px] font-bold tracking-tight text-gray-900"
                 >
                   {isNew
-                    ? "Create tour template"
+                    ? "Create trip template"
                     : draft.tripName || "Untitled template"}
                 </h2>
                 <button
@@ -471,9 +489,12 @@ export default function TourTemplateModal({
               </div>
               <p className="mt-0.5 truncate text-xs text-gray-400">
                 {draft.serviceType === "Sightseeing Charter" &&
-                draft.officeLocation &&
-                draft.durationTier
-                  ? `${draft.officeLocation} office · ${draft.durationTier} · start ${draft.waypoints.pickupTime}`
+                draft.officeLocation
+                  ? `${draft.officeLocation} office${
+                      draft.durationTier
+                        ? ` · ${draft.durationTier} · start ${draft.waypoints.pickupTime}`
+                        : ""
+                    }`
                   : draft.serviceType === "Airport" && draft.officeLocation
                     ? `${draft.officeLocation} office · Airport transfer${
                         draft.airport
@@ -1104,11 +1125,20 @@ export default function TourTemplateModal({
                 </div>
               )
             ) : draft.serviceType === "Airport" ? (
-              <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/60 p-5 text-center text-xs text-gray-500">
-                Airport vehicle pricing (fixed fee, distance cap, and excess
-                rate per airport) comes from the Pricing CMS — an in-form
-                picker for it is coming soon.
-              </div>
+              draft.officeLocation && draft.airport ? (
+                <AirportVehiclePricingTable
+                  officeLocation={draft.officeLocation}
+                  airport={draft.airport}
+                  pricing={draft.airportVehiclePricing}
+                  onChange={handleAirportVehiclePricingChange}
+                  locked={locked}
+                />
+              ) : (
+                <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/60 p-5 text-center text-xs text-gray-500">
+                  Select an office and airport to see available vehicle
+                  pricing.
+                </div>
+              )
             ) : (
               <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/60 p-5 text-center text-xs text-gray-500">
                 Select a service type to see available vehicle pricing.
