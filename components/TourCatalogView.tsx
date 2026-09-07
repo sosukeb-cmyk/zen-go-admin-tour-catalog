@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CalendarClock,
   Globe,
   Plus,
   RefreshCw,
   Search,
+  SlidersHorizontal,
 } from "lucide-react";
 import type { OfficeLocation, TourStatus, TourTemplate } from "@/lib/types";
 import { OFFICE_LOCATIONS } from "@/lib/types";
@@ -28,6 +29,35 @@ function pillClass(active: boolean) {
   }`;
 }
 
+type ColumnKey =
+  | "office"
+  | "duration"
+  | "start"
+  | "viewsBooked"
+  | "price"
+  | "status"
+  | "preview";
+
+const OPTIONAL_COLUMNS: { key: ColumnKey; label: string }[] = [
+  { key: "office", label: "Office" },
+  { key: "duration", label: "Duration" },
+  { key: "start", label: "Start" },
+  { key: "viewsBooked", label: "Views / Books" },
+  { key: "price", label: "Price" },
+  { key: "status", label: "Status" },
+  { key: "preview", label: "Preview" },
+];
+
+const DEFAULT_VISIBLE_COLUMNS: Record<ColumnKey, boolean> = {
+  office: true,
+  duration: true,
+  start: true,
+  viewsBooked: true,
+  price: true,
+  status: true,
+  preview: true,
+};
+
 export default function TourCatalogView({
   tours,
   onToggleStatus,
@@ -40,6 +70,24 @@ export default function TourCatalogView({
     "all",
   );
   const [statusFilter, setStatusFilter] = useState<TourStatus | "all">("all");
+  const [visibleColumns, setVisibleColumns] =
+    useState<Record<ColumnKey, boolean>>(DEFAULT_VISIBLE_COLUMNS);
+  const [columnMenuOpen, setColumnMenuOpen] = useState(false);
+  const columnMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!columnMenuOpen) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (!columnMenuRef.current?.contains(e.target as Node)) {
+        setColumnMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [columnMenuOpen]);
+
+  const toggleColumn = (key: ColumnKey) =>
+    setVisibleColumns((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const filtered = useMemo(() => {
     return tours.filter((t) => {
@@ -58,6 +106,8 @@ export default function TourCatalogView({
   }, [tours, search, officeFilter, statusFilter]);
 
   const activeCount = tours.filter((t) => t.status === "active").length;
+  const visibleCount =
+    1 + OPTIONAL_COLUMNS.filter((c) => visibleColumns[c.key]).length + 1;
 
   return (
     <div className="flex flex-col gap-5">
@@ -134,31 +184,69 @@ export default function TourCatalogView({
         <table className="w-full min-w-[940px] border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50/80">
-              {[
-                "Tour",
-                "Office",
-                "Duration",
-                "Start",
-                "Views / Books",
-                "Price",
-                "Status",
-                "Preview",
-              ].map((col, i) => (
-                <th
-                  key={col}
-                  className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500 ${
-                    i === 4 || i === 5 ? "text-right" : "text-left"
-                  } ${i === 7 ? "text-right" : ""}`}
+              <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Tour
+              </th>
+              {OPTIONAL_COLUMNS.filter((c) => visibleColumns[c.key]).map(
+                (c) => (
+                  <th
+                    key={c.key}
+                    className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500 ${
+                      c.key === "viewsBooked" ||
+                      c.key === "price" ||
+                      c.key === "preview"
+                        ? "text-right"
+                        : "text-left"
+                    }`}
+                  >
+                    {c.label}
+                  </th>
+                ),
+              )}
+              <th className="relative w-10 px-2 py-2.5">
+                <button
+                  type="button"
+                  title="Show/hide columns"
+                  onClick={() => setColumnMenuOpen((v) => !v)}
+                  className={`inline-flex h-7 w-7 items-center justify-center rounded-md transition ${
+                    columnMenuOpen
+                      ? "bg-gray-200 text-gray-900"
+                      : "text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                  }`}
                 >
-                  {col}
-                </th>
-              ))}
+                  <SlidersHorizontal className="h-4 w-4" />
+                </button>
+                {columnMenuOpen && (
+                  <div
+                    ref={columnMenuRef}
+                    className="absolute right-0 top-full z-20 mt-1.5 w-52 rounded-lg border border-gray-200 bg-white p-1.5 text-left normal-case tracking-normal shadow-lg"
+                  >
+                    {OPTIONAL_COLUMNS.map((c) => (
+                      <label
+                        key={c.key}
+                        className="flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-normal text-gray-700 hover:bg-gray-50"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={visibleColumns[c.key]}
+                          onChange={() => toggleColumn(c.key)}
+                          className="rounded border-gray-300"
+                        />
+                        {c.label}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-14 text-center text-gray-400">
+                <td
+                  colSpan={visibleCount}
+                  className="px-4 py-14 text-center text-gray-400"
+                >
                   No tours match your filters.
                 </td>
               </tr>
@@ -181,80 +269,95 @@ export default function TourCatalogView({
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 text-gray-700">
-                      {tour.officeLocation}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className="inline-flex whitespace-nowrap rounded-md border border-gray-200 bg-gray-50/80 px-2 py-0.5 text-xs font-medium text-gray-600">
-                        {tour.durationTier}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 tabular-nums text-gray-600">
-                      {tour.startTime}
-                    </td>
-                    <td className="px-4 py-3.5 text-right tabular-nums text-gray-600">
-                      {tour.viewedCount} / {tour.bookedCount}
-                    </td>
-                    <td className="px-4 py-3.5 text-right font-semibold tabular-nums text-gray-900">
-                      {formatPrice(tour.price)}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={active}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onToggleStatus(tour.id);
-                        }}
-                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition ${
-                          active
-                            ? "bg-emerald-100 text-emerald-800"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}
-                      >
-                        <span
-                          className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full ${
-                            active ? "bg-emerald-600" : "bg-gray-400"
+                    {visibleColumns.office && (
+                      <td className="px-4 py-3.5 text-gray-700">
+                        {tour.officeLocation}
+                      </td>
+                    )}
+                    {visibleColumns.duration && (
+                      <td className="px-4 py-3.5">
+                        <span className="inline-flex whitespace-nowrap rounded-md border border-gray-200 bg-gray-50/80 px-2 py-0.5 text-xs font-medium text-gray-600">
+                          {tour.durationTier}
+                        </span>
+                      </td>
+                    )}
+                    {visibleColumns.start && (
+                      <td className="px-4 py-3.5 tabular-nums text-gray-600">
+                        {tour.startTime}
+                      </td>
+                    )}
+                    {visibleColumns.viewsBooked && (
+                      <td className="px-4 py-3.5 text-right tabular-nums text-gray-600">
+                        {tour.viewedCount} / {tour.bookedCount}
+                      </td>
+                    )}
+                    {visibleColumns.price && (
+                      <td className="px-4 py-3.5 text-right font-semibold tabular-nums text-gray-900">
+                        {formatPrice(tour.price)}
+                      </td>
+                    )}
+                    {visibleColumns.status && (
+                      <td className="px-4 py-3.5">
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={active}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleStatus(tour.id);
+                          }}
+                          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition ${
+                            active
+                              ? "bg-emerald-100 text-emerald-800"
+                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                           }`}
-                        />
-                        {active ? "Active" : "Inactive"}
-                      </button>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          type="button"
-                          title="Open tour details page"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(
-                              tour.previewLinks.tourDetails,
-                              "_blank",
-                              "noopener,noreferrer",
-                            );
-                          }}
-                          className="rounded p-1.5 text-gray-400 transition hover:bg-blue-50 hover:text-blue-600"
                         >
-                          <Globe className="h-4 w-4" />
+                          <span
+                            className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full ${
+                              active ? "bg-emerald-600" : "bg-gray-400"
+                            }`}
+                          />
+                          {active ? "Active" : "Inactive"}
                         </button>
-                        <button
-                          type="button"
-                          title="Open booking page"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(
-                              tour.previewLinks.tourBooking,
-                              "_blank",
-                              "noopener,noreferrer",
-                            );
-                          }}
-                          className="rounded p-1.5 text-gray-400 transition hover:bg-violet-50 hover:text-violet-600"
-                        >
-                          <CalendarClock className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
+                      </td>
+                    )}
+                    {visibleColumns.preview && (
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            title="Open tour details page"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(
+                                tour.previewLinks.tourDetails,
+                                "_blank",
+                                "noopener,noreferrer",
+                              );
+                            }}
+                            className="rounded p-1.5 text-gray-400 transition hover:bg-blue-50 hover:text-blue-600"
+                          >
+                            <Globe className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            title="Open booking page"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(
+                                tour.previewLinks.tourBooking,
+                                "_blank",
+                                "noopener,noreferrer",
+                              );
+                            }}
+                            className="rounded p-1.5 text-gray-400 transition hover:bg-violet-50 hover:text-violet-600"
+                          >
+                            <CalendarClock className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                    <td />
                   </tr>
                 );
               })
