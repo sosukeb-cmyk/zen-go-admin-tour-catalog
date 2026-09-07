@@ -7,7 +7,11 @@ import TourCatalogView from "@/components/TourCatalogView";
 import TourTemplateModal from "@/components/TourTemplateModal";
 import { SEED_TOURS } from "@/lib/mockData";
 import type { NavView, TourTemplate } from "@/lib/types";
-import { createEmptyTour, generateNextTourId } from "@/lib/tourUtils";
+import {
+  createEmptyTour,
+  generateNextAirportId,
+  generateNextSightseeingId,
+} from "@/lib/tourUtils";
 
 function PlaceholderView({ title }: { title: string }) {
   return (
@@ -53,7 +57,10 @@ export default function AdminShell() {
   const handleSave = useCallback(
     (saved: TourTemplate) => {
       if (isNewTour) {
-        const newId = generateNextTourId(tours);
+        const newId =
+          saved.serviceType === "Airport" && saved.officeLocation
+            ? generateNextAirportId(tours, saved.officeLocation)
+            : generateNextSightseeingId(tours);
         const finalized: TourTemplate = { ...saved, id: newId, reference: newId };
         setTours((prev) => [...prev, finalized]);
         setModalTour(finalized);

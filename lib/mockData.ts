@@ -17,6 +17,7 @@ export const SEED_TOURS: TourTemplate[] = [
     userSource: null,
     paymentStatus: null,
     serviceType: "Sightseeing Charter",
+    airport: null,
     passengers: null,
     luggage: null,
     waypoints: {
@@ -56,6 +57,7 @@ export const SEED_TOURS: TourTemplate[] = [
     userSource: null,
     paymentStatus: null,
     serviceType: "Sightseeing Charter",
+    airport: null,
     passengers: null,
     luggage: null,
     waypoints: {
@@ -94,6 +96,7 @@ export const SEED_TOURS: TourTemplate[] = [
     userSource: null,
     paymentStatus: null,
     serviceType: "Sightseeing Charter",
+    airport: null,
     passengers: null,
     luggage: null,
     waypoints: {

@@ -44,7 +44,7 @@ export interface PreviewLinks {
   tourBooking: string;
 }
 
-export type ServiceType = "Sightseeing Charter";
+export type ServiceType = "Sightseeing Charter" | "Airport";
 
 /** Core order fields shared with the orders pipeline. */
 export interface OrderDetail {
@@ -60,6 +60,9 @@ export interface OrderDetail {
   userSource: string | null;
   paymentStatus: string | null;
   serviceType: ServiceType | null;
+  /** The specific airport this template picks up from — only meaningful
+   * when serviceType is "Airport". */
+  airport: string | null;
   passengers: number | null;
   luggage: number | null;
   waypoints: TourWaypoints;
@@ -94,4 +97,4 @@ export const OFFICE_LOCATIONS: OfficeLocation[] = [
 
 export const DURATION_TIERS: DurationTier[] = ["Half Day 5hrs", "Full Day 10hrs"];
 
-export const SERVICE_TYPES: ServiceType[] = ["Sightseeing Charter"];
+export const SERVICE_TYPES: ServiceType[] = ["Sightseeing Charter", "Airport"];

@@ -1,7 +1,52 @@
-import { SIGHTSEEING_PRICE_SEED } from "./pricingCmsMock";
-import type { OfficeLocation, TourTemplate, TourWaypoints } from "./types";
+import { AIRPORT_MAP_LOCATIONS, type MapLocation } from "./mapLocationMock";
+import { OFFICE_AIRPORTS, SIGHTSEEING_PRICE_SEED } from "./pricingCmsMock";
+import type {
+  OfficeLocation,
+  ServiceType,
+  TourTemplate,
+  TourWaypoints,
+} from "./types";
 
-export const DRAFT_TOUR_ID = "#T-----";
+/** SKUs are generated at save time, keyed to the service type — the
+ * scheme (and even whether "#" is part of it) differs per type. Until
+ * then the draft just shows a placeholder for whichever type is picked. */
+export const DRAFT_ID_PLACEHOLDER = "-----";
+export const DRAFT_ID_SIGHTSEEING = "#T-----";
+export const DRAFT_ID_AIRPORT = "A-----";
+
+export function draftIdForServiceType(type: ServiceType | null): string {
+  if (type === "Sightseeing Charter") return DRAFT_ID_SIGHTSEEING;
+  if (type === "Airport") return DRAFT_ID_AIRPORT;
+  return DRAFT_ID_PLACEHOLDER;
+}
+
+export function serviceTypeBadgeClasses(type: ServiceType | null): string {
+  if (type === "Airport") return "bg-blue-50 text-blue-700";
+  if (type === "Sightseeing Charter") return "bg-emerald-50 text-emerald-700";
+  return "bg-gray-100 text-gray-500";
+}
+
+/** For an Airport-service template: which airport(s) serve this office, and
+ * — when there's only one candidate — the pickup spot that resolves to
+ * automatically. Offices with more than one airport (Tokyo, Osaka) return
+ * a null airport/empty pickup so the admin has to pick one explicitly. */
+export function resolveAirportPickup(office: OfficeLocation | null): {
+  airport: string | null;
+  pickup: string;
+  pickupMapLocation: MapLocation | null;
+} {
+  if (!office) return { airport: null, pickup: "", pickupMapLocation: null };
+  const airports = OFFICE_AIRPORTS[office] ?? [];
+  if (airports.length === 1) {
+    const airport = airports[0];
+    return {
+      airport,
+      pickup: airport,
+      pickupMapLocation: AIRPORT_MAP_LOCATIONS[airport] ?? null,
+    };
+  }
+  return { airport: null, pickup: "", pickupMapLocation: null };
+}
 
 export function slugifyTripName(name: string): string {
   return name
@@ -61,7 +106,7 @@ export function formatDuration(mins: number | null): string {
   return `${hours}h ${minutes}m`;
 }
 
-export function generateNextTourId(tours: TourTemplate[]): string {
+export function generateNextSightseeingId(tours: TourTemplate[]): string {
   const numbers = tours
     .map((t) => {
       const match = t.id.match(/#T(\d{4})A/);
@@ -73,10 +118,28 @@ export function generateNextTourId(tours: TourTemplate[]): string {
   return `#T${String(next).padStart(4, "0")}A`;
 }
 
+/** Airport SKUs: A + 4-digit sequence (its own, independent of the
+ * Sightseeing sequence) + the office's first letter, e.g. "A0002T" for
+ * the 2nd airport template ever created, saved with a Tokyo office. */
+export function generateNextAirportId(
+  tours: TourTemplate[],
+  office: OfficeLocation,
+): string {
+  const numbers = tours
+    .map((t) => {
+      const match = t.id.match(/^A(\d{4})/);
+      return match ? parseInt(match[1], 10) : 0;
+    })
+    .filter((n) => n > 0);
+
+  const next = numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
+  return `A${String(next).padStart(4, "0")}${office[0].toUpperCase()}`;
+}
+
 export function createEmptyTour(): TourTemplate {
   return {
-    id: DRAFT_TOUR_ID,
-    reference: DRAFT_TOUR_ID,
+    id: DRAFT_ID_PLACEHOLDER,
+    reference: DRAFT_ID_PLACEHOLDER,
     tripName: "",
     officeLocation: null,
     durationTier: null,
@@ -90,6 +153,7 @@ export function createEmptyTour(): TourTemplate {
     userSource: null,
     paymentStatus: null,
     serviceType: null,
+    airport: null,
     passengers: null,
     luggage: null,
     waypoints: {
@@ -102,7 +166,7 @@ export function createEmptyTour(): TourTemplate {
     },
     tripDistanceKm: null,
     tripDurationMins: null,
-    previewLinks: buildDefaultPreviewLinks("", DRAFT_TOUR_ID),
+    previewLinks: buildDefaultPreviewLinks("", DRAFT_ID_PLACEHOLDER),
     driverName: null,
     plateNumber: null,
     useDefaultPrice: true,

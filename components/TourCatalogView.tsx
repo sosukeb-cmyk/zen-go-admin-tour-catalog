@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import type { OfficeLocation, TourStatus, TourTemplate } from "@/lib/types";
 import { OFFICE_LOCATIONS } from "@/lib/types";
-import { formatPrice } from "@/lib/tourUtils";
+import { formatPrice, serviceTypeBadgeClasses } from "@/lib/tourUtils";
 
 interface TourCatalogViewProps {
   tours: TourTemplate[];
@@ -274,8 +274,10 @@ export default function TourCatalogView({
                     </td>
                     {visibleColumns.serviceType && (
                       <td className="px-4 py-3.5">
-                        <span className="inline-flex whitespace-nowrap rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
-                          {tour.serviceType}
+                        <span
+                          className={`inline-flex whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-semibold ${serviceTypeBadgeClasses(tour.serviceType)}`}
+                        >
+                          {tour.serviceType ?? "—"}
                         </span>
                       </td>
                     )}
@@ -286,9 +288,13 @@ export default function TourCatalogView({
                     )}
                     {visibleColumns.duration && (
                       <td className="px-4 py-3.5">
-                        <span className="inline-flex whitespace-nowrap rounded-md border border-gray-200 bg-gray-50/80 px-2 py-0.5 text-xs font-medium text-gray-600">
-                          {tour.durationTier}
-                        </span>
+                        {tour.durationTier ? (
+                          <span className="inline-flex whitespace-nowrap rounded-md border border-gray-200 bg-gray-50/80 px-2 py-0.5 text-xs font-medium text-gray-600">
+                            {tour.durationTier}
+                          </span>
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
                       </td>
                     )}
                     {visibleColumns.start && (
@@ -312,22 +318,20 @@ export default function TourCatalogView({
                           type="button"
                           role="switch"
                           aria-checked={active}
+                          aria-label={active ? "Active" : "Inactive"}
                           onClick={(e) => {
                             e.stopPropagation();
                             onToggleStatus(tour.id);
                           }}
-                          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition ${
-                            active
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors ${
+                            active ? "bg-emerald-500" : "bg-gray-300"
                           }`}
                         >
                           <span
-                            className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full ${
-                              active ? "bg-emerald-600" : "bg-gray-400"
+                            className={`pointer-events-none inline-block h-5 w-5 translate-y-0.5 rounded-full bg-white shadow transition-transform ${
+                              active ? "translate-x-[22px]" : "translate-x-0.5"
                             }`}
                           />
-                          {active ? "Active" : "Inactive"}
                         </button>
                       </td>
                     )}

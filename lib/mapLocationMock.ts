@@ -36,7 +36,40 @@ export const MAP_LOCATION_SUGGESTIONS: MapLocation[] = [
     title: "Great Buddha (Daibutsu)",
     address: "4 Chome-2-28 Hase, Kamakura, Kanagawa, Japan",
   },
+  {
+    title: "Narita Airport",
+    address: "1-1 Furugome, Narita, Chiba, Japan",
+  },
+  {
+    title: "Haneda Airport",
+    address: "2-6-5 Hanedakuko, Ota City, Tokyo, Japan",
+  },
+  {
+    title: "Kansai Airport",
+    address: "1 Senshukuko Kita, Izumisano, Osaka, Japan",
+  },
+  {
+    title: "Osaka Itami Airport",
+    address: "3-555 Hotarugaike Nishimachi, Toyonaka, Osaka, Japan",
+  },
+  {
+    title: "Chubu Centrair Airport",
+    address: "1-1 Centrair, Tokoname, Aichi, Japan",
+  },
+  {
+    title: "New Chitose Airport",
+    address: "Bibi, Chitose, Hokkaido, Japan",
+  },
 ];
+
+/** Quick lookup for the airport entries above, used to auto-fill the
+ * pickup spot when an Airport-service template's office/airport is set. */
+export const AIRPORT_MAP_LOCATIONS: Record<string, MapLocation> =
+  Object.fromEntries(
+    MAP_LOCATION_SUGGESTIONS.filter((loc) => loc.title.endsWith("Airport")).map(
+      (loc) => [loc.title, loc],
+    ),
+  );
 
 export function searchMapLocations(query: string): MapLocation[] {
   const q = query.trim().toLowerCase();

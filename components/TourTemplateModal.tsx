@@ -14,18 +14,28 @@ import {
   Undo2,
   X,
 } from "lucide-react";
-import type { DurationTier, TourTemplate, TourWaypoints } from "@/lib/types";
+import type {
+  DurationTier,
+  OfficeLocation,
+  ServiceType,
+  TourTemplate,
+  TourWaypoints,
+} from "@/lib/types";
 import { DURATION_TIERS, OFFICE_LOCATIONS, SERVICE_TYPES } from "@/lib/types";
 import {
+  draftIdForServiceType,
   estimateRouteMetrics,
   formatDuration,
   formatPrice,
+  resolveAirportPickup,
+  serviceTypeBadgeClasses,
   suggestedPriceForOffice,
 } from "@/lib/tourUtils";
+import { OFFICE_AIRPORTS } from "@/lib/pricingCmsMock";
 import MapLocationPicker from "@/components/booking/MapLocationPicker";
 import RouteMap from "@/components/booking/RouteMap";
 import VehiclePricingTable from "@/components/booking/VehiclePricingTable";
-import type { MapLocation } from "@/lib/mapLocationMock";
+import { AIRPORT_MAP_LOCATIONS, type MapLocation } from "@/lib/mapLocationMock";
 
 interface TourTemplateModalProps {
   tour: TourTemplate | null;
@@ -119,6 +129,72 @@ export default function TourTemplateModal({
         nextDuration.startsWith("Half Day"),
       ),
     };
+  };
+
+  /** Sets pickup + its map pin, going through routeCopy when the route
+   * section is actively being edited (which it always is for a new
+   * template), or straight onto the draft's waypoints otherwise. */
+  const applyPickupResolution = (
+    patch: Partial<TourTemplate>,
+    resolved: { pickup: string; pickupMapLocation: MapLocation | null },
+  ): Partial<TourTemplate> => {
+    if (routeEditing) {
+      setRouteCopy((prev) =>
+        prev
+          ? {
+              ...prev,
+              pickup: resolved.pickup,
+              pickupMapLocation: resolved.pickupMapLocation,
+            }
+          : prev,
+      );
+      return patch;
+    }
+    return {
+      ...patch,
+      waypoints: {
+        ...draft.waypoints,
+        pickup: resolved.pickup,
+        pickupMapLocation: resolved.pickupMapLocation,
+      },
+    };
+  };
+
+  const selectServiceType = (type: ServiceType) => {
+    const newId = draftIdForServiceType(type);
+    let patch: Partial<TourTemplate> = {
+      serviceType: type,
+      id: newId,
+      reference: newId,
+      price: null,
+      vehiclePricing: null,
+    };
+    if (type === "Sightseeing Charter") {
+      patch = { ...patch, airport: null };
+    } else {
+      const resolved = resolveAirportPickup(draft.officeLocation);
+      patch = { ...patch, durationTier: null, airport: resolved.airport };
+      patch = applyPickupResolution(patch, resolved);
+    }
+    commit("Service type selected", patch);
+  };
+
+  const selectOffice = (loc: OfficeLocation) => {
+    let patch = withSuggestedPrice({ officeLocation: loc });
+    if (draft.serviceType === "Airport") {
+      const resolved = resolveAirportPickup(loc);
+      patch = { ...patch, airport: resolved.airport };
+      patch = applyPickupResolution(patch, resolved);
+    }
+    commit("Office changed", patch);
+  };
+
+  const selectAirport = (airport: string) => {
+    const patch = applyPickupResolution(
+      { airport },
+      { pickup: airport, pickupMapLocation: AIRPORT_MAP_LOCATIONS[airport] ?? null },
+    );
+    commit("Airport selected", patch);
   };
 
   const undo = () => {
@@ -219,8 +295,12 @@ export default function TourTemplateModal({
       setSaveError("Select an office location before saving.");
       return;
     }
-    if (!draft.durationTier) {
+    if (draft.serviceType === "Sightseeing Charter" && !draft.durationTier) {
       setSaveError("Select a duration tier before saving.");
+      return;
+    }
+    if (draft.serviceType === "Airport" && !draft.airport) {
+      setSaveError("Select an airport before saving.");
       return;
     }
     const hasMissingCustomPrice = draft.vehiclePricing?.rows.some(
@@ -241,11 +321,17 @@ export default function TourTemplateModal({
   };
 
   const wp = routeEditing && routeCopy ? routeCopy : draft.waypoints;
+  const readyForPrice =
+    draft.serviceType === "Sightseeing Charter"
+      ? !!draft.officeLocation && !!draft.durationTier
+      : draft.serviceType === "Airport"
+        ? !!draft.officeLocation
+        : false;
   const canSave =
     !!draft.tripName.trim() &&
     !!draft.serviceType &&
     !!draft.officeLocation &&
-    !!draft.durationTier;
+    (draft.serviceType === "Airport" ? !!draft.airport : !!draft.durationTier);
   const dirty = baseline
     ? JSON.stringify(baseline) !== JSON.stringify(draft)
     : true;
@@ -369,9 +455,15 @@ export default function TourTemplateModal({
                 </button>
               </div>
               <p className="mt-0.5 truncate text-xs text-gray-400">
-                {draft.officeLocation && draft.durationTier
+                {draft.serviceType === "Sightseeing Charter" &&
+                draft.officeLocation &&
+                draft.durationTier
                   ? `${draft.officeLocation} office · ${draft.durationTier} · start ${draft.waypoints.pickupTime}`
-                  : "Office and duration not set yet"}
+                  : draft.serviceType === "Airport" && draft.officeLocation
+                    ? `${draft.officeLocation} office · Airport transfer${
+                        draft.airport ? ` · ${draft.airport}` : ""
+                      } · start ${draft.waypoints.pickupTime}`
+                    : "Service type and office not set yet"}
               </p>
             </div>
           </div>
@@ -409,23 +501,24 @@ export default function TourTemplateModal({
             <div>
               <FieldLabel>Service Type</FieldLabel>
               <div className="flex flex-wrap gap-1.5">
-                {SERVICE_TYPES.map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    disabled={locked}
-                    onClick={() =>
-                      commit("Service type selected", { serviceType: type })
-                    }
-                    className={`rounded-lg px-2.5 py-2 text-xs font-semibold transition disabled:cursor-default ${
-                      draft.serviceType === type
-                        ? "bg-[#121621] text-white"
-                        : `bg-white text-gray-600 ${locked ? "opacity-60" : "hover:bg-gray-100"} border border-gray-200`
-                    }`}
-                  >
-                    {type}
-                  </button>
-                ))}
+                {SERVICE_TYPES.map((type) => {
+                  const selected = draft.serviceType === type;
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      disabled={locked}
+                      onClick={() => selectServiceType(type)}
+                      className={`rounded-lg border px-2.5 py-2 text-xs font-bold transition disabled:cursor-default ${
+                        selected
+                          ? serviceTypeBadgeClasses(type) + " border-transparent"
+                          : `border-gray-200 bg-white text-gray-600 ${locked ? "opacity-60" : "hover:bg-gray-100"}`
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -451,12 +544,7 @@ export default function TourTemplateModal({
                     key={loc}
                     type="button"
                     disabled={locked}
-                    onClick={() =>
-                      commit(
-                        "Office changed",
-                        withSuggestedPrice({ officeLocation: loc }),
-                      )
-                    }
+                    onClick={() => selectOffice(loc)}
                     className={`rounded-lg px-2.5 py-2 text-xs font-semibold transition disabled:cursor-default ${
                       draft.officeLocation === loc
                         ? "bg-[#121621] text-white"
@@ -469,33 +557,59 @@ export default function TourTemplateModal({
               </div>
             </div>
 
-            <div>
-              <FieldLabel>Duration Tier</FieldLabel>
-              <div className="grid grid-cols-2 gap-1.5">
-                {DURATION_TIERS.map((tier) => (
-                  <button
-                    key={tier}
-                    type="button"
-                    disabled={locked}
-                    onClick={() =>
-                      commit(
-                        "Duration tier changed",
-                        withSuggestedPrice({
-                          durationTier: tier as DurationTier,
-                        }),
-                      )
-                    }
-                    className={`rounded-lg px-2.5 py-2 text-center text-xs font-semibold transition disabled:cursor-default ${
-                      draft.durationTier === tier
-                        ? "bg-[#121621] text-white"
-                        : `bg-white text-gray-600 ${locked ? "opacity-60" : "hover:bg-gray-100"} border border-gray-200`
-                    }`}
-                  >
-                    {tier}
-                  </button>
-                ))}
+            {draft.serviceType === "Airport" ? (
+              draft.officeLocation &&
+              (OFFICE_AIRPORTS[draft.officeLocation]?.length ?? 0) > 1 && (
+                <div>
+                  <FieldLabel>Airport</FieldLabel>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {OFFICE_AIRPORTS[draft.officeLocation].map((airport) => (
+                      <button
+                        key={airport}
+                        type="button"
+                        disabled={locked}
+                        onClick={() => selectAirport(airport)}
+                        className={`rounded-lg px-2.5 py-2 text-center text-xs font-semibold transition disabled:cursor-default ${
+                          draft.airport === airport
+                            ? "bg-[#121621] text-white"
+                            : `bg-white text-gray-600 ${locked ? "opacity-60" : "hover:bg-gray-100"} border border-gray-200`
+                        }`}
+                      >
+                        {airport}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            ) : (
+              <div>
+                <FieldLabel>Duration Tier</FieldLabel>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {DURATION_TIERS.map((tier) => (
+                    <button
+                      key={tier}
+                      type="button"
+                      disabled={locked}
+                      onClick={() =>
+                        commit(
+                          "Duration tier changed",
+                          withSuggestedPrice({
+                            durationTier: tier as DurationTier,
+                          }),
+                        )
+                      }
+                      className={`rounded-lg px-2.5 py-2 text-center text-xs font-semibold transition disabled:cursor-default ${
+                        draft.durationTier === tier
+                          ? "bg-[#121621] text-white"
+                          : `bg-white text-gray-600 ${locked ? "opacity-60" : "hover:bg-gray-100"} border border-gray-200`
+                      }`}
+                    >
+                      {tier}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="h-px bg-gray-200" />
 
@@ -526,9 +640,11 @@ export default function TourTemplateModal({
                 </p>
               </div>
             </div>
-            {!draft.officeLocation || !draft.durationTier ? (
+            {!readyForPrice ? (
               <p className="-mt-1 text-[11px] text-gray-400">
-                Select an office and duration tier to set a starting price.
+                {draft.serviceType === "Airport"
+                  ? "Select an office to set a starting price."
+                  : "Select an office and duration tier to set a starting price."}
               </p>
             ) : (
               <div>
@@ -951,18 +1067,30 @@ export default function TourTemplateModal({
               {routeMapOpen && <RouteMap waypoints={draft.waypoints} />}
             </div>
 
-            {draft.officeLocation && draft.durationTier ? (
-              <VehiclePricingTable
-                officeLocation={draft.officeLocation}
-                durationTier={draft.durationTier}
-                pricing={draft.vehiclePricing}
-                onChange={handleVehiclePricingChange}
-                locked={locked}
-              />
+            {draft.serviceType === "Sightseeing Charter" ? (
+              draft.officeLocation && draft.durationTier ? (
+                <VehiclePricingTable
+                  officeLocation={draft.officeLocation}
+                  durationTier={draft.durationTier}
+                  pricing={draft.vehiclePricing}
+                  onChange={handleVehiclePricingChange}
+                  locked={locked}
+                />
+              ) : (
+                <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/60 p-5 text-center text-xs text-gray-500">
+                  Select an office and duration tier to see available vehicle
+                  pricing.
+                </div>
+              )
+            ) : draft.serviceType === "Airport" ? (
+              <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/60 p-5 text-center text-xs text-gray-500">
+                Airport vehicle pricing (fixed fee, distance cap, and excess
+                rate per airport) comes from the Pricing CMS — an in-form
+                picker for it is coming soon.
+              </div>
             ) : (
               <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/60 p-5 text-center text-xs text-gray-500">
-                Select an office and duration tier to see available vehicle
-                pricing.
+                Select a service type to see available vehicle pricing.
               </div>
             )}
           </div>
