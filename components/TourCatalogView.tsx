@@ -176,6 +176,19 @@ export default function TourCatalogView({
     }
   };
 
+  /** Refresh clears every filter/sort back to its default (search, office,
+   * status, sort) so the table shows everything, unsorted — but leaves the
+   * Show/Hide column selection alone, since that's a display preference,
+   * not a filter. */
+  const handleRefreshClick = () => {
+    setSearch("");
+    setOfficeFilter([]);
+    setStatusFilter("all");
+    setSortKey(null);
+    setSortDir("asc");
+    onRefresh();
+  };
+
   const filtered = useMemo(() => {
     return tours.filter((t) => {
       const q = search.toLowerCase();
@@ -235,7 +248,7 @@ export default function TourCatalogView({
           <button
             type="button"
             title="Refresh"
-            onClick={onRefresh}
+            onClick={handleRefreshClick}
             className="inline-flex h-[38px] w-[38px] items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50 hover:text-gray-900"
           >
             <RefreshCw className="h-4 w-4" />
