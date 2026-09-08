@@ -453,7 +453,6 @@ export default function TourCatalogView({
   const visibleOrderedColumns = columnOrder.filter(
     (key) => key === "name" || visibleColumns[key as ColumnKey],
   );
-  const rightAlignedKeys = new Set<SortableKey>(["views", "books"]);
 
   const visibleCount =
     visibleOrderedColumns.length + (visibleColumns.preview ? 1 : 0) + 2;
@@ -673,7 +672,6 @@ export default function TourCatalogView({
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50/80">
               {visibleOrderedColumns.map((key) => {
-                const rightAlign = rightAlignedKeys.has(key);
                 return (
                   <th
                     key={key}
@@ -686,9 +684,9 @@ export default function TourCatalogView({
                           : "descending"
                         : undefined
                     }
-                    className={`relative cursor-grab select-none px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500 active:cursor-grabbing ${
-                      rightAlign ? "text-right" : "text-left"
-                    } ${draggedKey === key ? "opacity-40" : ""} ${
+                    className={`relative cursor-grab select-none px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 active:cursor-grabbing ${
+                      draggedKey === key ? "opacity-40" : ""
+                    } ${
                       dragOverKey === key
                         ? "bg-blue-50 outline outline-2 -outline-offset-2 outline-blue-300"
                         : ""
@@ -697,9 +695,7 @@ export default function TourCatalogView({
                     <button
                       type="button"
                       onClick={() => handleSort(key)}
-                      className={`inline-flex items-center gap-1 transition hover:text-gray-900 ${
-                        rightAlign ? "flex-row-reverse" : ""
-                      }`}
+                      className="inline-flex items-center gap-1 transition hover:text-gray-900"
                     >
                       {COLUMN_LABELS[key]}
                       <SortIcon active={sortKey === key} dir={sortDir} />
@@ -781,12 +777,7 @@ export default function TourCatalogView({
                     className="group cursor-pointer border-b border-gray-50 transition hover:bg-gray-50/80"
                   >
                     {visibleOrderedColumns.map((key) => (
-                      <td
-                        key={key}
-                        className={`px-4 py-3.5 text-gray-600 ${
-                          rightAlignedKeys.has(key) ? "text-right" : ""
-                        }`}
-                      >
+                      <td key={key} className="px-4 py-3.5 text-gray-600">
                         {renderCell(tour, key, active)}
                       </td>
                     ))}
