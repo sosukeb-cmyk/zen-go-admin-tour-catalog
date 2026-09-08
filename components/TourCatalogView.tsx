@@ -716,15 +716,15 @@ export default function TourCatalogView({
                 );
               })}
               {visibleColumns.preview && (
-                <th className="sticky right-16 z-10 border-l border-gray-100 bg-gray-50 px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <th className="sticky right-16 z-20 border-l border-gray-100 bg-gray-50 px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Preview
                 </th>
               )}
               <th
-                className="sticky right-8 z-10 w-8 bg-gray-50 px-1 py-2.5"
+                className="sticky right-8 z-20 w-8 bg-gray-50 px-1 py-2.5"
                 aria-hidden="true"
               />
-              <th className="sticky right-0 z-10 w-8 bg-gray-50 px-1 py-2.5">
+              <th className="sticky right-0 z-20 w-8 bg-gray-50 px-1 py-2.5">
                 <button
                   type="button"
                   title="Show/hide columns"
