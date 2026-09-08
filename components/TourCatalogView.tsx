@@ -41,6 +41,7 @@ function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
 }
 
 type ColumnKey =
+  | "id"
   | "serviceType"
   | "office"
   | "duration"
@@ -52,6 +53,7 @@ type ColumnKey =
   | "preview";
 
 const OPTIONAL_COLUMNS: { key: ColumnKey; label: string }[] = [
+  { key: "id", label: "ID" },
   { key: "serviceType", label: "Service Type" },
   { key: "office", label: "Office" },
   { key: "duration", label: "Duration" },
@@ -64,6 +66,7 @@ const OPTIONAL_COLUMNS: { key: ColumnKey; label: string }[] = [
 ];
 
 const DEFAULT_VISIBLE_COLUMNS: Record<ColumnKey, boolean> = {
+  id: true,
   serviceType: true,
   office: true,
   duration: true,
@@ -91,6 +94,7 @@ const SORT_CONFIG: Record<
   }
 > = {
   name: { type: "string", getValue: (t) => t.tripName || null, defaultDir: "asc" },
+  id: { type: "string", getValue: (t) => t.id, defaultDir: "asc" },
   serviceType: { type: "string", getValue: (t) => t.serviceType, defaultDir: "asc" },
   office: { type: "string", getValue: (t) => t.officeLocation, defaultDir: "asc" },
   duration: { type: "string", getValue: (t) => t.durationTier, defaultDir: "asc" },
@@ -460,15 +464,15 @@ export default function TourCatalogView({
                     className="cursor-pointer border-b border-gray-50 transition hover:bg-gray-50/80"
                   >
                     <td className="px-4 py-3.5">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-[15px] font-semibold tracking-tight text-gray-900">
-                          {tour.tripName || "Untitled template"}
-                        </span>
-                        <span className="font-mono text-xs font-medium text-gray-400">
-                          {tour.id}
-                        </span>
-                      </div>
+                      <span className="text-[15px] font-semibold tracking-tight text-gray-900">
+                        {tour.tripName || "Untitled template"}
+                      </span>
                     </td>
+                    {visibleColumns.id && (
+                      <td className="px-4 py-3.5 font-mono text-xs font-medium text-gray-400">
+                        {tour.id}
+                      </td>
+                    )}
                     {visibleColumns.serviceType && (
                       <td className="px-4 py-3.5">
                         <span
