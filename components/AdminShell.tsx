@@ -6,11 +6,14 @@ import Sidebar from "@/components/Sidebar";
 import TourCatalogView from "@/components/TourCatalogView";
 import TourTemplateModal from "@/components/TourTemplateModal";
 import { SEED_TOURS } from "@/lib/mockData";
+import { AIRPORT_CODES } from "@/lib/pricingCmsMock";
 import type { NavView, TourTemplate } from "@/lib/types";
 import {
+  buildAirportBookingUrl,
   createEmptyTour,
   generateNextAirportId,
   generateNextSightseeingId,
+  nextAirportBookingSequence,
 } from "@/lib/tourUtils";
 
 function PlaceholderView({ title }: { title: string }) {
@@ -66,7 +69,18 @@ export default function AdminShell() {
           saved.serviceType === "Airport" && saved.officeLocation
             ? generateNextAirportId(tours, saved.officeLocation)
             : generateNextSightseeingId(tours);
-        const finalized: TourTemplate = { ...saved, id: newId, reference: newId };
+        let finalized: TourTemplate = { ...saved, id: newId, reference: newId };
+        if (saved.serviceType === "Airport" && saved.airport) {
+          const airportCode = AIRPORT_CODES[saved.airport] ?? saved.airport;
+          const sequence = nextAirportBookingSequence(tours, airportCode);
+          finalized = {
+            ...finalized,
+            previewLinks: {
+              ...finalized.previewLinks,
+              tourBooking: buildAirportBookingUrl(airportCode, sequence),
+            },
+          };
+        }
         setTours((prev) => [...prev, finalized]);
         setModalTour(finalized);
       } else {

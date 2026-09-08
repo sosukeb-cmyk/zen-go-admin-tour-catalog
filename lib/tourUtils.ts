@@ -101,6 +101,34 @@ export function buildDefaultTourBookingUrl(
   return `${DEMO_BOOKING_ORIGIN}/tours/${slug || "new-tour"}/${seq}/${formatBookingDate(date)}`;
 }
 
+/** Airport bookings use their own URL shape — /airport/{IATA code}/{seq}/
+ * {date} — instead of the Sightseeing /tours/{slug}/{seq}/{date} pattern. */
+export function buildAirportBookingUrl(
+  airportCode: string,
+  sequence: string,
+  date = new Date(),
+): string {
+  return `${DEMO_BOOKING_ORIGIN}/airport/${airportCode}/${sequence}/${formatBookingDate(date)}`;
+}
+
+/** The 4-digit sequence in an Airport booking URL is scoped per airport
+ * code, not global — each airport (NRT, HND, KIX, ITM, NGO, CTS) ticks up
+ * its own counter independently, starting at "0001". */
+export function nextAirportBookingSequence(
+  tours: TourTemplate[],
+  airportCode: string,
+): string {
+  const pattern = new RegExp(`/airport/${airportCode}/(\\d{4})/`);
+  const numbers = tours
+    .map((t) => {
+      const match = t.previewLinks.tourBooking.match(pattern);
+      return match ? parseInt(match[1], 10) : 0;
+    })
+    .filter((n) => n > 0);
+  const next = numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
+  return String(next).padStart(4, "0");
+}
+
 export function buildDefaultPreviewLinks(
   tripName: string,
   tourId: string,

@@ -1,5 +1,6 @@
 import { AIRPORT_MAP_LOCATIONS } from "./mapLocationMock";
-import { airportDisplayName, buildDefaultPreviewLinks } from "./tourUtils";
+import { AIRPORT_CODES } from "./pricingCmsMock";
+import { airportDisplayName, buildAirportBookingUrl } from "./tourUtils";
 import type { OfficeLocation, TourTemplate } from "./types";
 
 const SIGHTSEEING_SEED_TOURS: TourTemplate[] = [
@@ -184,12 +185,23 @@ const AIRPORT_SHORT_NAMES: Record<string, string> = {
  * routes page these presets were seeded from. */
 const AIRPORT_TRANSFER_LANDING_URL = "https://www.zengoride.com/airport-transfer";
 
+/** Airport booking-URL sequences are scoped per airport code (not global),
+ * so this counter ticks up independently for each of the six airports as
+ * the presets below are generated in order. */
+const airportBookingSeqCounters: Record<string, number> = {};
+
 function buildAirportPresetTours(): TourTemplate[] {
   return AIRPORT_ROUTE_DEFS.map((route, index) => {
     const id = `#A${String(index + 1).padStart(4, "0")}${route.office[0]}`;
     const shortName = AIRPORT_SHORT_NAMES[route.airport] ?? route.airport;
     const tripName = `${shortName} to ${route.destination}`;
-    const previewLinks = buildDefaultPreviewLinks(tripName, id);
+    const airportCode = AIRPORT_CODES[route.airport] ?? route.airport;
+    airportBookingSeqCounters[airportCode] =
+      (airportBookingSeqCounters[airportCode] ?? 0) + 1;
+    const bookingSequence = String(
+      airportBookingSeqCounters[airportCode],
+    ).padStart(4, "0");
+    const tourBooking = buildAirportBookingUrl(airportCode, bookingSequence);
     return {
       id,
       reference: id,
@@ -221,7 +233,7 @@ function buildAirportPresetTours(): TourTemplate[] {
       tripDurationMins: null,
       previewLinks: {
         tourDetails: AIRPORT_TRANSFER_LANDING_URL,
-        tourBooking: previewLinks.tourBooking,
+        tourBooking,
       },
       driverName: null,
       plateNumber: null,
