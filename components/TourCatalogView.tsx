@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -78,6 +78,10 @@ const DEFAULT_VISIBLE_COLUMNS: Record<ColumnKey, boolean> = {
   preview: true,
 };
 
+/** Every column except Preview (and the always-fixed trash/column-picker
+ * utility columns) can be resized and dragged into a new position. Name
+ * joins this set even though it isn't part of ColumnKey/visibleColumns,
+ * since it's never hideable — only reorderable/resizable like the rest. */
 type SortableKey = Exclude<ColumnKey, "preview"> | "name";
 type SortDirection = "asc" | "desc";
 
@@ -113,6 +117,97 @@ const SORT_CONFIG: Record<
   },
 };
 
+const COLUMN_LABELS: Record<SortableKey, string> = {
+  name: "Name",
+  id: "ID",
+  serviceType: "Service Type",
+  office: "Office",
+  duration: "Duration",
+  start: "Start",
+  views: "Clicks",
+  books: "Booked",
+  price: "Price",
+  status: "Status",
+};
+
+const DEFAULT_COLUMN_ORDER: SortableKey[] = [
+  "name",
+  "id",
+  "serviceType",
+  "office",
+  "duration",
+  "start",
+  "views",
+  "books",
+  "price",
+  "status",
+];
+
+const DEFAULT_COLUMN_WIDTHS: Record<SortableKey, number> = {
+  name: 240,
+  id: 100,
+  serviceType: 150,
+  office: 100,
+  duration: 130,
+  start: 80,
+  views: 80,
+  books: 80,
+  price: 110,
+  status: 90,
+};
+
+const MIN_COLUMN_WIDTH = 60;
+const PREVIEW_COLUMN_WIDTH = 96;
+const UTILITY_COLUMN_WIDTH = 32;
+
+/** Persists only for the browser session (cleared on browser/tab close) —
+ * the closest stand-in this prototype has for "until the user logs out",
+ * since there's no real auth. Deliberately untouched by the Refresh
+ * button, which only resets search/filter/sort, not layout. */
+const COLUMN_LAYOUT_STORAGE_KEY = "catalog:columnLayout:v1";
+
+interface StoredColumnLayout {
+  order: SortableKey[];
+  widths: Partial<Record<SortableKey, number>>;
+}
+
+function loadStoredLayout(): StoredColumnLayout | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(COLUMN_LAYOUT_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    return parsed as StoredColumnLayout;
+  } catch {
+    return null;
+  }
+}
+
+function sanitizeOrder(stored: unknown): SortableKey[] {
+  if (!Array.isArray(stored)) return [...DEFAULT_COLUMN_ORDER];
+  const known = stored.filter((k): k is SortableKey =>
+    DEFAULT_COLUMN_ORDER.includes(k as SortableKey),
+  );
+  const missing = DEFAULT_COLUMN_ORDER.filter((k) => !known.includes(k));
+  return [...known, ...missing];
+}
+
+function sanitizeWidths(
+  stored: unknown,
+): Record<SortableKey, number> {
+  const result = { ...DEFAULT_COLUMN_WIDTHS };
+  if (stored && typeof stored === "object") {
+    for (const key of DEFAULT_COLUMN_ORDER) {
+      const value = (stored as Record<string, unknown>)[key];
+      if (typeof value === "number" && value >= MIN_COLUMN_WIDTH) {
+        result[key] = value;
+      }
+    }
+  }
+  return result;
+}
+
 export default function TourCatalogView({
   tours,
   onToggleStatus,
@@ -133,6 +228,27 @@ export default function TourCatalogView({
   const columnMenuRef = useRef<HTMLDivElement>(null);
   const [sortKey, setSortKey] = useState<SortableKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>("asc");
+
+  /** Start with the plain defaults (matching what the server renders) and
+   * only pull in the session's saved layout from an effect below — reading
+   * sessionStorage directly in the initial state would make the client's
+   * first render diverge from the server's and trigger a hydration error. */
+  const [columnOrder, setColumnOrder] = useState<SortableKey[]>(DEFAULT_COLUMN_ORDER);
+  const [columnWidths, setColumnWidths] =
+    useState<Record<SortableKey, number>>(DEFAULT_COLUMN_WIDTHS);
+  const [draggedKey, setDraggedKey] = useState<SortableKey | null>(null);
+  const [dragOverKey, setDragOverKey] = useState<SortableKey | null>(null);
+  const resizingRef = useRef<{
+    key: SortableKey;
+    startX: number;
+    startWidth: number;
+  } | null>(null);
+  /** Real state (not a ref) so the gate is tied to a specific render's
+   * closure — React 18 dev-mode double-invokes effects on the same
+   * initial render, and a mutable ref would let the second invocation
+   * see itself already flipped, letting the save effect below write the
+   * pre-load defaults over a real stored layout before it ever loads. */
+  const [layoutLoaded, setLayoutLoaded] = useState(false);
 
   useEffect(() => {
     if (!columnMenuOpen) return;
@@ -155,6 +271,106 @@ export default function TourCatalogView({
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [officeMenuOpen]);
+
+  /** Client-only: pull in this session's saved layout once, after the
+   * hydration-safe default render above has already committed. */
+  useEffect(() => {
+    const stored = loadStoredLayout();
+    if (stored) {
+      setColumnOrder(sanitizeOrder(stored.order));
+      setColumnWidths(sanitizeWidths(stored.widths));
+    }
+    setLayoutLoaded(true);
+  }, []);
+
+  /** Column order/width changes are session-scoped, not tied to any
+   * particular tour data — persisted independent of Refresh/filters. Held
+   * off until the load effect above has had its turn, so it can't clobber
+   * a just-restored layout with the defaults from the very first render. */
+  useEffect(() => {
+    if (!layoutLoaded) return;
+    try {
+      window.sessionStorage.setItem(
+        COLUMN_LAYOUT_STORAGE_KEY,
+        JSON.stringify({ order: columnOrder, widths: columnWidths }),
+      );
+    } catch {
+      // sessionStorage unavailable (private browsing, etc.) — layout just
+      // won't persist across a remount, which is a harmless degradation.
+    }
+  }, [columnOrder, columnWidths, layoutLoaded]);
+
+  const handleResizeMove = useCallback((e: MouseEvent) => {
+    const resizing = resizingRef.current;
+    if (!resizing) return;
+    const next = Math.max(
+      MIN_COLUMN_WIDTH,
+      resizing.startWidth + (e.clientX - resizing.startX),
+    );
+    setColumnWidths((prev) => ({ ...prev, [resizing.key]: next }));
+  }, []);
+
+  const startResize = (e: React.MouseEvent, key: SortableKey) => {
+    e.preventDefault();
+    e.stopPropagation();
+    resizingRef.current = { key, startX: e.clientX, startWidth: columnWidths[key] };
+    const onUp = () => {
+      resizingRef.current = null;
+      window.removeEventListener("mousemove", handleResizeMove);
+    };
+    window.addEventListener("mousemove", handleResizeMove);
+    window.addEventListener("mouseup", onUp, { once: true });
+  };
+
+  const reorderColumns = (sourceKey: SortableKey, targetKey: SortableKey) => {
+    if (sourceKey === targetKey) return;
+    setColumnOrder((prev) => {
+      const next = [...prev];
+      const from = next.indexOf(sourceKey);
+      const to = next.indexOf(targetKey);
+      if (from === -1 || to === -1) return prev;
+      next.splice(from, 1);
+      next.splice(to, 0, sourceKey);
+      return next;
+    });
+  };
+
+  /** Column reordering is driven by plain mouse events rather than native
+   * HTML5 drag-and-drop — the native API isn't reliably triggerable via
+   * automated/synthetic input and has its own UX quirks (browser-drawn
+   * ghost image, inconsistent feel); a manual drag matches the resize
+   * handle's approach above and behaves the same for a real click (no
+   * movement) so the sort button underneath still works normally. */
+  const startHeaderDrag = (e: React.MouseEvent, key: SortableKey) => {
+    const startX = e.clientX;
+    let dragging = false;
+    let currentOverKey: SortableKey | null = null;
+
+    const onMove = (moveEvent: MouseEvent) => {
+      if (!dragging) {
+        if (Math.abs(moveEvent.clientX - startX) < 5) return;
+        dragging = true;
+        setDraggedKey(key);
+      }
+      const el = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY);
+      const th = el?.closest("[data-col-key]");
+      const overKey = th?.getAttribute("data-col-key") as SortableKey | null;
+      currentOverKey = overKey && overKey !== key ? overKey : null;
+      setDragOverKey(currentOverKey);
+    };
+
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      if (dragging && currentOverKey) {
+        reorderColumns(key, currentOverKey);
+      }
+      setDraggedKey(null);
+      setDragOverKey(null);
+    };
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp, { once: true });
+  };
 
   const toggleColumn = (key: ColumnKey) =>
     setVisibleColumns((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -182,8 +398,8 @@ export default function TourCatalogView({
 
   /** Refresh clears every filter/sort back to its default (search, office,
    * status, sort) so the table shows everything, unsorted — but leaves the
-   * Show/Hide column selection alone, since that's a display preference,
-   * not a filter. */
+   * Show/Hide column selection and the column order/widths alone, since
+   * those are display preferences, not filters. */
   const handleRefreshClick = () => {
     setSearch("");
     setOfficeFilter([]);
@@ -233,8 +449,97 @@ export default function TourCatalogView({
   }, [filtered, sortKey, sortDir]);
 
   const activeCount = tours.filter((t) => t.status === "active").length;
+
+  const visibleOrderedColumns = columnOrder.filter(
+    (key) => key === "name" || visibleColumns[key as ColumnKey],
+  );
+  const rightAlignedKeys = new Set<SortableKey>(["views", "books", "price"]);
+
   const visibleCount =
-    1 + OPTIONAL_COLUMNS.filter((c) => visibleColumns[c.key]).length + 2;
+    visibleOrderedColumns.length + (visibleColumns.preview ? 1 : 0) + 2;
+
+  /** table-layout:fixed only honors <col> widths once the table itself has
+   * a definite (non-auto) width — otherwise browsers silently fall back to
+   * content-based sizing and every drag-resize is a no-op. */
+  const totalTableWidth =
+    visibleOrderedColumns.reduce((sum, key) => sum + columnWidths[key], 0) +
+    (visibleColumns.preview ? PREVIEW_COLUMN_WIDTH : 0) +
+    UTILITY_COLUMN_WIDTH * 2;
+
+  function renderCell(tour: TourTemplate, key: SortableKey, active: boolean) {
+    switch (key) {
+      case "name":
+        return (
+          <span className="text-[15px] font-semibold tracking-tight text-gray-900">
+            {tour.tripName || "Untitled template"}
+          </span>
+        );
+      case "id":
+        return (
+          <span className="font-mono text-xs font-medium text-gray-400">
+            {tour.id}
+          </span>
+        );
+      case "serviceType":
+        return (
+          <span
+            className={`inline-flex whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-semibold ${serviceTypeBadgeClasses(tour.serviceType)}`}
+          >
+            {tour.serviceType ?? "—"}
+          </span>
+        );
+      case "office":
+        return tour.officeLocation;
+      case "duration":
+        return tour.durationTier ? (
+          <span className="inline-flex whitespace-nowrap rounded-md border border-gray-200 bg-gray-50/80 px-2 py-0.5 text-xs font-medium text-gray-600">
+            {tour.durationTier}
+          </span>
+        ) : (
+          <span className="text-gray-300">—</span>
+        );
+      case "start":
+        return tour.serviceType === "Airport" ? (
+          <span className="text-gray-300">—</span>
+        ) : (
+          <span className="tabular-nums">{tour.startTime}</span>
+        );
+      case "views":
+        return <span className="tabular-nums">{tour.viewedCount}</span>;
+      case "books":
+        return <span className="tabular-nums">{tour.bookedCount}</span>;
+      case "price":
+        return (
+          <span className="font-semibold tabular-nums text-gray-900">
+            {formatPrice(tour.price)}
+          </span>
+        );
+      case "status":
+        return (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={active}
+            aria-label={active ? "Active" : "Inactive"}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleStatus(tour.id);
+            }}
+            className={`relative inline-flex h-[14px] w-[26px] shrink-0 cursor-pointer rounded-full transition-colors ${
+              active ? "bg-emerald-500" : "bg-gray-300"
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-3 w-3 translate-y-[1px] rounded-full bg-white shadow transition-transform ${
+                active ? "translate-x-[13px]" : "translate-x-[1px]"
+              }`}
+            />
+          </button>
+        );
+      default:
+        return null;
+    }
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -351,60 +656,69 @@ export default function TourCatalogView({
       </div>
 
       <div className="overflow-x-auto overflow-y-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-        <table className="w-full min-w-[940px] border-collapse text-left text-sm">
+        <table
+          className="table-fixed border-collapse text-left text-sm"
+          style={{ width: totalTableWidth, minWidth: "100%" }}
+        >
+          <colgroup>
+            {visibleOrderedColumns.map((key) => (
+              <col key={key} style={{ width: columnWidths[key] }} />
+            ))}
+            {visibleColumns.preview && (
+              <col style={{ width: PREVIEW_COLUMN_WIDTH }} />
+            )}
+            <col style={{ width: UTILITY_COLUMN_WIDTH }} />
+            <col style={{ width: UTILITY_COLUMN_WIDTH }} />
+          </colgroup>
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50/80">
-              <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                <button
-                  type="button"
-                  onClick={() => handleSort("name")}
-                  className="inline-flex items-center gap-1 transition hover:text-gray-900"
-                >
-                  Name
-                  <SortIcon active={sortKey === "name"} dir={sortDir} />
-                </button>
-              </th>
-              {OPTIONAL_COLUMNS.filter((c) => visibleColumns[c.key]).map(
-                (c) => {
-                  const rightAlign =
-                    c.key === "views" ||
-                    c.key === "books" ||
-                    c.key === "price" ||
-                    c.key === "preview";
-                  return (
-                    <th
-                      key={c.key}
-                      aria-sort={
-                        sortKey === c.key
-                          ? sortDir === "asc"
-                            ? "ascending"
-                            : "descending"
-                          : undefined
-                      }
-                      className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500 ${
-                        rightAlign ? "text-right" : "text-left"
+              {visibleOrderedColumns.map((key) => {
+                const rightAlign = rightAlignedKeys.has(key);
+                return (
+                  <th
+                    key={key}
+                    data-col-key={key}
+                    onMouseDown={(e) => startHeaderDrag(e, key)}
+                    aria-sort={
+                      sortKey === key
+                        ? sortDir === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : undefined
+                    }
+                    className={`relative cursor-grab select-none px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500 active:cursor-grabbing ${
+                      rightAlign ? "text-right" : "text-left"
+                    } ${draggedKey === key ? "opacity-40" : ""} ${
+                      dragOverKey === key
+                        ? "bg-blue-50 outline outline-2 -outline-offset-2 outline-blue-300"
+                        : ""
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleSort(key)}
+                      className={`inline-flex items-center gap-1 transition hover:text-gray-900 ${
+                        rightAlign ? "flex-row-reverse" : ""
                       }`}
                     >
-                      {c.key === "preview" ? (
-                        c.label
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleSort(c.key as SortableKey)}
-                          className={`inline-flex items-center gap-1 transition hover:text-gray-900 ${
-                            rightAlign ? "flex-row-reverse" : ""
-                          }`}
-                        >
-                          {c.label}
-                          <SortIcon
-                            active={sortKey === c.key}
-                            dir={sortDir}
-                          />
-                        </button>
-                      )}
-                    </th>
-                  );
-                },
+                      {COLUMN_LABELS[key]}
+                      <SortIcon active={sortKey === key} dir={sortDir} />
+                    </button>
+                    <div
+                      onMouseDown={(e) => startResize(e, key)}
+                      draggable={false}
+                      title="Drag to resize"
+                      className="group absolute right-0 top-0 z-10 h-full w-2 cursor-col-resize"
+                    >
+                      <div className="mx-auto h-full w-px bg-gray-200 transition-colors group-hover:w-[3px] group-hover:bg-gray-400" />
+                    </div>
+                  </th>
+                );
+              })}
+              {visibleColumns.preview && (
+                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Preview
+                </th>
               )}
               <th className="w-8 px-1 py-2.5" aria-hidden="true" />
               <th className="relative w-8 px-1 py-2.5">
@@ -463,88 +777,16 @@ export default function TourCatalogView({
                     onClick={() => onEdit(tour.id)}
                     className="cursor-pointer border-b border-gray-50 transition hover:bg-gray-50/80"
                   >
-                    <td className="px-4 py-3.5">
-                      <span className="text-[15px] font-semibold tracking-tight text-gray-900">
-                        {tour.tripName || "Untitled template"}
-                      </span>
-                    </td>
-                    {visibleColumns.id && (
-                      <td className="px-4 py-3.5 font-mono text-xs font-medium text-gray-400">
-                        {tour.id}
+                    {visibleOrderedColumns.map((key) => (
+                      <td
+                        key={key}
+                        className={`px-4 py-3.5 text-gray-600 ${
+                          rightAlignedKeys.has(key) ? "text-right" : ""
+                        }`}
+                      >
+                        {renderCell(tour, key, active)}
                       </td>
-                    )}
-                    {visibleColumns.serviceType && (
-                      <td className="px-4 py-3.5">
-                        <span
-                          className={`inline-flex whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-semibold ${serviceTypeBadgeClasses(tour.serviceType)}`}
-                        >
-                          {tour.serviceType ?? "—"}
-                        </span>
-                      </td>
-                    )}
-                    {visibleColumns.office && (
-                      <td className="px-4 py-3.5 text-gray-700">
-                        {tour.officeLocation}
-                      </td>
-                    )}
-                    {visibleColumns.duration && (
-                      <td className="px-4 py-3.5">
-                        {tour.durationTier ? (
-                          <span className="inline-flex whitespace-nowrap rounded-md border border-gray-200 bg-gray-50/80 px-2 py-0.5 text-xs font-medium text-gray-600">
-                            {tour.durationTier}
-                          </span>
-                        ) : (
-                          <span className="text-gray-300">—</span>
-                        )}
-                      </td>
-                    )}
-                    {visibleColumns.start && (
-                      <td className="px-4 py-3.5 tabular-nums text-gray-600">
-                        {tour.serviceType === "Airport" ? (
-                          <span className="text-gray-300">—</span>
-                        ) : (
-                          tour.startTime
-                        )}
-                      </td>
-                    )}
-                    {visibleColumns.views && (
-                      <td className="px-4 py-3.5 text-right tabular-nums text-gray-600">
-                        {tour.viewedCount}
-                      </td>
-                    )}
-                    {visibleColumns.books && (
-                      <td className="px-4 py-3.5 text-right tabular-nums text-gray-600">
-                        {tour.bookedCount}
-                      </td>
-                    )}
-                    {visibleColumns.price && (
-                      <td className="px-4 py-3.5 text-right font-semibold tabular-nums text-gray-900">
-                        {formatPrice(tour.price)}
-                      </td>
-                    )}
-                    {visibleColumns.status && (
-                      <td className="px-4 py-3.5">
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={active}
-                          aria-label={active ? "Active" : "Inactive"}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onToggleStatus(tour.id);
-                          }}
-                          className={`relative inline-flex h-[14px] w-[26px] shrink-0 cursor-pointer rounded-full transition-colors ${
-                            active ? "bg-emerald-500" : "bg-gray-300"
-                          }`}
-                        >
-                          <span
-                            className={`pointer-events-none inline-block h-3 w-3 translate-y-[1px] rounded-full bg-white shadow transition-transform ${
-                              active ? "translate-x-[13px]" : "translate-x-[1px]"
-                            }`}
-                          />
-                        </button>
-                      </td>
-                    )}
+                    ))}
                     {visibleColumns.preview && (
                       <td className="px-4 py-3.5">
                         <div className="flex items-center justify-end gap-1">
