@@ -402,8 +402,8 @@ export default function TourCatalogView({
                   );
                 },
               )}
-              <th className="w-10 px-2 py-2.5" aria-hidden="true" />
-              <th className="relative w-10 px-2 py-2.5">
+              <th className="w-8 px-1 py-2.5" aria-hidden="true" />
+              <th className="relative w-8 px-1 py-2.5">
                 <button
                   type="button"
                   title="Show/hide columns"
@@ -529,13 +529,13 @@ export default function TourCatalogView({
                             e.stopPropagation();
                             onToggleStatus(tour.id);
                           }}
-                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors ${
+                          className={`relative inline-flex h-[14px] w-[26px] shrink-0 cursor-pointer rounded-full transition-colors ${
                             active ? "bg-emerald-500" : "bg-gray-300"
                           }`}
                         >
                           <span
-                            className={`pointer-events-none inline-block h-5 w-5 translate-y-0.5 rounded-full bg-white shadow transition-transform ${
-                              active ? "translate-x-[22px]" : "translate-x-0.5"
+                            className={`pointer-events-none inline-block h-3 w-3 translate-y-[1px] rounded-full bg-white shadow transition-transform ${
+                              active ? "translate-x-[13px]" : "translate-x-[1px]"
                             }`}
                           />
                         </button>
