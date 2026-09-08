@@ -45,7 +45,8 @@ type ColumnKey =
   | "office"
   | "duration"
   | "start"
-  | "viewsBooked"
+  | "views"
+  | "books"
   | "price"
   | "status"
   | "preview";
@@ -55,7 +56,8 @@ const OPTIONAL_COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: "office", label: "Office" },
   { key: "duration", label: "Duration" },
   { key: "start", label: "Start" },
-  { key: "viewsBooked", label: "Views / Books" },
+  { key: "views", label: "Views" },
+  { key: "books", label: "Books" },
   { key: "price", label: "Price" },
   { key: "status", label: "Status" },
   { key: "preview", label: "Preview" },
@@ -66,7 +68,8 @@ const DEFAULT_VISIBLE_COLUMNS: Record<ColumnKey, boolean> = {
   office: true,
   duration: true,
   start: true,
-  viewsBooked: true,
+  views: true,
+  books: true,
   price: true,
   status: true,
   preview: true,
@@ -96,11 +99,8 @@ const SORT_CONFIG: Record<
     getValue: (t) => (t.serviceType === "Airport" ? null : t.startTime),
     defaultDir: "asc",
   },
-  viewsBooked: {
-    type: "number",
-    getValue: (t) => t.viewedCount * 1_000_000 + t.bookedCount,
-    defaultDir: "desc",
-  },
+  views: { type: "number", getValue: (t) => t.viewedCount, defaultDir: "desc" },
+  books: { type: "number", getValue: (t) => t.bookedCount, defaultDir: "desc" },
   price: { type: "number", getValue: (t) => t.price, defaultDir: "desc" },
   status: {
     type: "number",
@@ -363,7 +363,8 @@ export default function TourCatalogView({
               {OPTIONAL_COLUMNS.filter((c) => visibleColumns[c.key]).map(
                 (c) => {
                   const rightAlign =
-                    c.key === "viewsBooked" ||
+                    c.key === "views" ||
+                    c.key === "books" ||
                     c.key === "price" ||
                     c.key === "preview";
                   return (
@@ -502,9 +503,14 @@ export default function TourCatalogView({
                         )}
                       </td>
                     )}
-                    {visibleColumns.viewsBooked && (
+                    {visibleColumns.views && (
                       <td className="px-4 py-3.5 text-right tabular-nums text-gray-600">
-                        {tour.viewedCount} / {tour.bookedCount}
+                        {tour.viewedCount}
+                      </td>
+                    )}
+                    {visibleColumns.books && (
+                      <td className="px-4 py-3.5 text-right tabular-nums text-gray-600">
+                        {tour.bookedCount}
                       </td>
                     )}
                     {visibleColumns.price && (
