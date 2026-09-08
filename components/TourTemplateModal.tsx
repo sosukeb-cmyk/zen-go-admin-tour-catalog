@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  CalendarClock,
   Check,
   ChevronUp,
   Eye,
   EyeOff,
+  Globe,
   Map as MapIcon,
   MapPin,
   Pencil,
@@ -723,45 +725,81 @@ export default function TourTemplateModal({
             <div className="flex flex-col gap-2">
               <div>
                 <FieldLabel>Tour details page</FieldLabel>
-                <input
-                  type="url"
-                  aria-label="Tour details URL"
-                  readOnly={locked}
-                  value={draft.previewLinks.tourDetails}
-                  onChange={(e) =>
-                    update({
-                      previewLinks: {
-                        ...draft.previewLinks,
-                        tourDetails: e.target.value,
-                      },
-                    })
-                  }
-                  onFocus={onFieldFocus}
-                  onBlur={onFieldBlur}
-                  placeholder="https://www.zengoride.com/tours/..."
-                  className={linkFieldClass}
-                />
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="url"
+                    aria-label="Tour details URL"
+                    readOnly={locked}
+                    value={draft.previewLinks.tourDetails}
+                    onChange={(e) =>
+                      update({
+                        previewLinks: {
+                          ...draft.previewLinks,
+                          tourDetails: e.target.value,
+                        },
+                      })
+                    }
+                    onFocus={onFieldFocus}
+                    onBlur={onFieldBlur}
+                    placeholder="https://www.zengoride.com/tours/..."
+                    className={linkFieldClass}
+                  />
+                  {!isNew && draft.previewLinks.tourDetails && (
+                    <button
+                      type="button"
+                      title="Open tour details page"
+                      onClick={() =>
+                        window.open(
+                          draft.previewLinks.tourDetails,
+                          "_blank",
+                          "noopener,noreferrer",
+                        )
+                      }
+                      className="shrink-0 rounded-lg border border-gray-200 bg-white p-2 text-blue-500 transition hover:bg-blue-50 hover:text-blue-600"
+                    >
+                      <Globe className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </div>
               <div>
                 <FieldLabel>Booking page</FieldLabel>
-                <input
-                  type="url"
-                  aria-label="Booking URL"
-                  readOnly={locked}
-                  value={draft.previewLinks.tourBooking}
-                  onChange={(e) =>
-                    update({
-                      previewLinks: {
-                        ...draft.previewLinks,
-                        tourBooking: e.target.value,
-                      },
-                    })
-                  }
-                  onFocus={onFieldFocus}
-                  onBlur={onFieldBlur}
-                  placeholder="/tours/your-slug/00001/2026-09-02"
-                  className={linkFieldClass}
-                />
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="url"
+                    aria-label="Booking URL"
+                    readOnly={locked}
+                    value={draft.previewLinks.tourBooking}
+                    onChange={(e) =>
+                      update({
+                        previewLinks: {
+                          ...draft.previewLinks,
+                          tourBooking: e.target.value,
+                        },
+                      })
+                    }
+                    onFocus={onFieldFocus}
+                    onBlur={onFieldBlur}
+                    placeholder="/tours/your-slug/00001/2026-09-02"
+                    className={linkFieldClass}
+                  />
+                  {!isNew && draft.previewLinks.tourBooking && (
+                    <button
+                      type="button"
+                      title="Open booking page"
+                      onClick={() =>
+                        window.open(
+                          draft.previewLinks.tourBooking,
+                          "_blank",
+                          "noopener,noreferrer",
+                        )
+                      }
+                      className="shrink-0 rounded-lg border border-gray-200 bg-white p-2 text-violet-500 transition hover:bg-violet-50 hover:text-violet-600"
+                    >
+                      <CalendarClock className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
