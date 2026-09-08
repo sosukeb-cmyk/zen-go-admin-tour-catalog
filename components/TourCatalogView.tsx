@@ -716,12 +716,15 @@ export default function TourCatalogView({
                 );
               })}
               {visibleColumns.preview && (
-                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <th className="sticky right-16 z-10 border-l border-gray-100 bg-gray-50 px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Preview
                 </th>
               )}
-              <th className="w-8 px-1 py-2.5" aria-hidden="true" />
-              <th className="relative w-8 px-1 py-2.5">
+              <th
+                className="sticky right-8 z-10 w-8 bg-gray-50 px-1 py-2.5"
+                aria-hidden="true"
+              />
+              <th className="sticky right-0 z-10 w-8 bg-gray-50 px-1 py-2.5">
                 <button
                   type="button"
                   title="Show/hide columns"
@@ -775,7 +778,7 @@ export default function TourCatalogView({
                   <tr
                     key={tour.id}
                     onClick={() => onEdit(tour.id)}
-                    className="cursor-pointer border-b border-gray-50 transition hover:bg-gray-50/80"
+                    className="group cursor-pointer border-b border-gray-50 transition hover:bg-gray-50/80"
                   >
                     {visibleOrderedColumns.map((key) => (
                       <td
@@ -788,7 +791,7 @@ export default function TourCatalogView({
                       </td>
                     ))}
                     {visibleColumns.preview && (
-                      <td className="px-4 py-3.5">
+                      <td className="sticky right-16 z-10 border-l border-gray-100 bg-white px-4 py-3.5 group-hover:bg-gray-50">
                         <div className="flex items-center justify-end gap-1">
                           <button
                             type="button"
@@ -823,7 +826,7 @@ export default function TourCatalogView({
                         </div>
                       </td>
                     )}
-                    <td className="px-2 py-3.5">
+                    <td className="sticky right-8 z-10 w-8 bg-white px-2 py-3.5 group-hover:bg-gray-50">
                       <button
                         type="button"
                         title="Delete template"
@@ -836,7 +839,7 @@ export default function TourCatalogView({
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </td>
-                    <td />
+                    <td className="sticky right-0 z-10 w-8 bg-white group-hover:bg-gray-50" />
                   </tr>
                 );
               })
