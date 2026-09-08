@@ -453,7 +453,7 @@ export default function TourCatalogView({
   const visibleOrderedColumns = columnOrder.filter(
     (key) => key === "name" || visibleColumns[key as ColumnKey],
   );
-  const rightAlignedKeys = new Set<SortableKey>(["views", "books", "price"]);
+  const rightAlignedKeys = new Set<SortableKey>(["views", "books"]);
 
   const visibleCount =
     visibleOrderedColumns.length + (visibleColumns.preview ? 1 : 0) + 2;
