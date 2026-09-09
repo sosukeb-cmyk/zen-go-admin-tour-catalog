@@ -15,8 +15,13 @@ import {
   SlidersHorizontal,
   Trash2,
 } from "lucide-react";
-import type { OfficeLocation, TourStatus, TourTemplate } from "@/lib/types";
-import { OFFICE_LOCATIONS } from "@/lib/types";
+import type {
+  OfficeLocation,
+  ServiceType,
+  TourStatus,
+  TourTemplate,
+} from "@/lib/types";
+import { OFFICE_LOCATIONS, SERVICE_TYPES } from "@/lib/types";
 import { formatPrice, serviceTypeBadgeClasses } from "@/lib/tourUtils";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
@@ -221,6 +226,11 @@ export default function TourCatalogView({
   const [officeFilter, setOfficeFilter] = useState<OfficeLocation[]>([]);
   const [officeMenuOpen, setOfficeMenuOpen] = useState(false);
   const officeMenuRef = useRef<HTMLDivElement>(null);
+  const [serviceTypeFilter, setServiceTypeFilter] = useState<ServiceType[]>(
+    [],
+  );
+  const [serviceTypeMenuOpen, setServiceTypeMenuOpen] = useState(false);
+  const serviceTypeMenuRef = useRef<HTMLDivElement>(null);
   const [statusFilter, setStatusFilter] = useState<TourStatus | "all">("all");
   const [visibleColumns, setVisibleColumns] =
     useState<Record<ColumnKey, boolean>>(DEFAULT_VISIBLE_COLUMNS);
@@ -271,6 +281,17 @@ export default function TourCatalogView({
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [officeMenuOpen]);
+
+  useEffect(() => {
+    if (!serviceTypeMenuOpen) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (!serviceTypeMenuRef.current?.contains(e.target as Node)) {
+        setServiceTypeMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [serviceTypeMenuOpen]);
 
   /** Client-only: pull in this session's saved layout once, after the
    * hydration-safe default render above has already committed. */
@@ -387,6 +408,18 @@ export default function TourCatalogView({
         ? officeFilter[0]
         : `${officeFilter.length} offices`;
 
+  const toggleServiceTypeFilter = (s: ServiceType) =>
+    setServiceTypeFilter((prev) =>
+      prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s],
+    );
+
+  const serviceTypeFilterLabel =
+    serviceTypeFilter.length === 0
+      ? "All service types"
+      : serviceTypeFilter.length === 1
+        ? serviceTypeFilter[0]
+        : `${serviceTypeFilter.length} service types`;
+
   const handleSort = (key: SortableKey) => {
     if (sortKey === key) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -403,6 +436,7 @@ export default function TourCatalogView({
   const handleRefreshClick = () => {
     setSearch("");
     setOfficeFilter([]);
+    setServiceTypeFilter([]);
     setStatusFilter("all");
     setSortKey(null);
     setSortDir("asc");
@@ -420,11 +454,16 @@ export default function TourCatalogView({
       const matchesOffice =
         officeFilter.length === 0 ||
         (t.officeLocation !== null && officeFilter.includes(t.officeLocation));
+      const matchesServiceType =
+        serviceTypeFilter.length === 0 ||
+        (t.serviceType !== null && serviceTypeFilter.includes(t.serviceType));
       const matchesStatus =
         statusFilter === "all" || t.status === statusFilter;
-      return matchesSearch && matchesOffice && matchesStatus;
+      return (
+        matchesSearch && matchesOffice && matchesServiceType && matchesStatus
+      );
     });
-  }, [tours, search, officeFilter, statusFilter]);
+  }, [tours, search, officeFilter, serviceTypeFilter, statusFilter]);
 
   const sorted = useMemo(() => {
     if (!sortKey) return filtered;
@@ -622,6 +661,50 @@ export default function TourCatalogView({
                     className="rounded border-gray-300"
                   />
                   {o}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="h-6 w-px bg-gray-200" />
+        <div ref={serviceTypeMenuRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setServiceTypeMenuOpen((v) => !v)}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+              serviceTypeFilter.length > 0
+                ? "bg-[#121621] text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            {serviceTypeFilterLabel}
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+          {serviceTypeMenuOpen && (
+            <div className="absolute left-0 top-full z-20 mt-1.5 w-48 rounded-lg border border-gray-200 bg-white p-1.5 shadow-lg">
+              <button
+                type="button"
+                onClick={() => setServiceTypeFilter([])}
+                className="mb-1 flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-50"
+              >
+                All service types
+                {serviceTypeFilter.length === 0 && (
+                  <Check className="h-3.5 w-3.5 text-gray-900" />
+                )}
+              </button>
+              <div className="my-1 h-px bg-gray-100" />
+              {SERVICE_TYPES.map((s) => (
+                <label
+                  key={s}
+                  className="flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-normal text-gray-700 hover:bg-gray-50"
+                >
+                  <input
+                    type="checkbox"
+                    checked={serviceTypeFilter.includes(s)}
+                    onChange={() => toggleServiceTypeFilter(s)}
+                    className="rounded border-gray-300"
+                  />
+                  {s}
                 </label>
               ))}
             </div>
