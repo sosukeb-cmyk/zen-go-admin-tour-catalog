@@ -24,6 +24,7 @@ import type {
 import { OFFICE_LOCATIONS, SERVICE_TYPES } from "@/lib/types";
 import { formatPrice, serviceTypeBadgeClasses } from "@/lib/tourUtils";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import DebugField from "@/components/DebugField";
 
 interface TourCatalogViewProps {
   tours: TourTemplate[];
@@ -133,6 +134,21 @@ const COLUMN_LABELS: Record<SortableKey, string> = {
   books: "Booked",
   price: "Price",
   status: "Status",
+};
+
+/** Debug-mode field inspector labels — every column here backs directly
+ * onto tour_templates (see db/schema.sql). */
+const COLUMN_DB_FIELDS: Record<SortableKey, string> = {
+  name: "trip_name",
+  id: "tour_id",
+  serviceType: "service_type",
+  office: "office_id",
+  duration: "duration_tier",
+  start: "start_time",
+  views: "viewed_count",
+  books: "booked_count",
+  price: "price",
+  status: "status",
 };
 
 const DEFAULT_COLUMN_ORDER: SortableKey[] = [
@@ -861,7 +877,12 @@ export default function TourCatalogView({
                   >
                     {visibleOrderedColumns.map((key) => (
                       <td key={key} className="px-4 py-3.5 text-gray-600">
-                        {renderCell(tour, key, active)}
+                        <DebugField
+                          model="tour_templates"
+                          field={COLUMN_DB_FIELDS[key]}
+                        >
+                          {renderCell(tour, key, active)}
+                        </DebugField>
                       </td>
                     ))}
                     {visibleColumns.preview && (

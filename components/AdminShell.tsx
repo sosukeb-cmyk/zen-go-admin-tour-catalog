@@ -8,6 +8,7 @@ import TourTemplateModal from "@/components/TourTemplateModal";
 import { SEED_TOURS } from "@/lib/mockData";
 import { AIRPORT_CODES } from "@/lib/pricingCmsMock";
 import type { NavView, TourTemplate } from "@/lib/types";
+import { DebugModeProvider } from "@/lib/debugMode";
 import {
   buildAirportBookingUrl,
   createEmptyTour,
@@ -105,38 +106,40 @@ export default function AdminShell() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Sidebar activeView={activeView} onNavigate={setActiveView} />
-      <main className="ml-56 min-h-screen p-8">
-        {activeView === "tour-catalog" ? (
-          <TourCatalogView
-            tours={tours}
+    <DebugModeProvider>
+      <div className="min-h-screen bg-gray-50">
+        <Sidebar activeView={activeView} onNavigate={setActiveView} />
+        <main className="ml-56 min-h-screen p-8">
+          {activeView === "tour-catalog" ? (
+            <TourCatalogView
+              tours={tours}
+              onToggleStatus={handleToggleStatus}
+              onEdit={openEdit}
+              onAddTour={openAdd}
+              onRefresh={handleRefresh}
+              onDelete={handleDelete}
+            />
+          ) : activeView === "pricing-cms" ? (
+            <PricingCMSView />
+          ) : (
+            <PlaceholderView title={viewTitles[activeView]} />
+          )}
+        </main>
+
+        {modalTour && (
+          <TourTemplateModal
+            tour={modalTour}
+            isNew={isNewTour}
+            onClose={() => {
+              setModalTour(null);
+              setIsNewTour(false);
+            }}
+            onSave={handleSave}
             onToggleStatus={handleToggleStatus}
-            onEdit={openEdit}
-            onAddTour={openAdd}
-            onRefresh={handleRefresh}
             onDelete={handleDelete}
           />
-        ) : activeView === "pricing-cms" ? (
-          <PricingCMSView />
-        ) : (
-          <PlaceholderView title={viewTitles[activeView]} />
         )}
-      </main>
-
-      {modalTour && (
-        <TourTemplateModal
-          tour={modalTour}
-          isNew={isNewTour}
-          onClose={() => {
-            setModalTour(null);
-            setIsNewTour(false);
-          }}
-          onSave={handleSave}
-          onToggleStatus={handleToggleStatus}
-          onDelete={handleDelete}
-        />
-      )}
-    </div>
+      </div>
+    </DebugModeProvider>
   );
 }

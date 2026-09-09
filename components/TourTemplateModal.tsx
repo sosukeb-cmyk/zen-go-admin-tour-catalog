@@ -41,6 +41,7 @@ import VehiclePricingTable from "@/components/booking/VehiclePricingTable";
 import AirportVehiclePricingTable from "@/components/booking/AirportVehiclePricingTable";
 import { AIRPORT_MAP_LOCATIONS, type MapLocation } from "@/lib/mapLocationMock";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import DebugField from "@/components/DebugField";
 
 interface TourTemplateModalProps {
   tour: TourTemplate | null;
@@ -544,117 +545,127 @@ export default function TourTemplateModal({
               Template
             </p>
 
-            <div>
-              <FieldLabel>Service Type</FieldLabel>
-              <div className="flex flex-wrap gap-1.5">
-                {SERVICE_TYPES.map((type) => {
-                  const selected = draft.serviceType === type;
-                  return (
-                    <button
-                      key={type}
-                      type="button"
-                      disabled={locked}
-                      onClick={() => selectServiceType(type)}
-                      className={`rounded-lg border px-2.5 py-2 text-xs font-bold transition disabled:cursor-default ${
-                        selected
-                          ? serviceTypeBadgeClasses(type) + " border-transparent"
-                          : `border-gray-200 bg-white text-gray-600 ${locked ? "opacity-60" : "hover:bg-gray-100"}`
-                      }`}
-                    >
-                      {type}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div>
-              <FieldLabel>Trip Name</FieldLabel>
-              <input
-                type="text"
-                readOnly={locked}
-                value={draft.tripName}
-                onChange={(e) => update({ tripName: e.target.value })}
-                onFocus={onFieldFocus}
-                onBlur={onFieldBlur}
-                placeholder="e.g. Autumn Foliage & Deer Paths"
-                className={fieldClass}
-              />
-            </div>
-
-            <div>
-              <FieldLabel>Office Location</FieldLabel>
-              <div className="grid grid-cols-2 gap-1.5">
-                {OFFICE_LOCATIONS.map((loc) => (
-                  <button
-                    key={loc}
-                    type="button"
-                    disabled={locked}
-                    onClick={() => selectOffice(loc)}
-                    className={`rounded-lg px-2.5 py-2 text-xs font-semibold transition disabled:cursor-default ${
-                      draft.officeLocation === loc
-                        ? "bg-[#121621] text-white"
-                        : `bg-white text-gray-600 ${locked ? "opacity-60" : "hover:bg-gray-100"} border border-gray-200`
-                    }`}
-                  >
-                    {loc}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {draft.serviceType === "Airport" ? (
-              draft.officeLocation &&
-              (OFFICE_AIRPORTS[draft.officeLocation]?.length ?? 0) > 1 && (
-                <div>
-                  <FieldLabel>Airport</FieldLabel>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {OFFICE_AIRPORTS[draft.officeLocation].map((airport) => (
+            <DebugField model="tour_templates" field="service_type">
+              <div>
+                <FieldLabel>Service Type</FieldLabel>
+                <div className="flex flex-wrap gap-1.5">
+                  {SERVICE_TYPES.map((type) => {
+                    const selected = draft.serviceType === type;
+                    return (
                       <button
-                        key={airport}
+                        key={type}
                         type="button"
                         disabled={locked}
-                        onClick={() => selectAirport(airport)}
-                        className={`rounded-lg px-2.5 py-2 text-center text-xs font-semibold transition disabled:cursor-default ${
-                          draft.airport === airport
-                            ? "bg-[#121621] text-white"
-                            : `bg-white text-gray-600 ${locked ? "opacity-60" : "hover:bg-gray-100"} border border-gray-200`
+                        onClick={() => selectServiceType(type)}
+                        className={`rounded-lg border px-2.5 py-2 text-xs font-bold transition disabled:cursor-default ${
+                          selected
+                            ? serviceTypeBadgeClasses(type) + " border-transparent"
+                            : `border-gray-200 bg-white text-gray-600 ${locked ? "opacity-60" : "hover:bg-gray-100"}`
                         }`}
                       >
-                        {airportDisplayName(airport)}
+                        {type}
                       </button>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
-              )
-            ) : (
+              </div>
+            </DebugField>
+
+            <DebugField model="tour_templates" field="trip_name">
               <div>
-                <FieldLabel>Duration Tier</FieldLabel>
+                <FieldLabel>Trip Name</FieldLabel>
+                <input
+                  type="text"
+                  readOnly={locked}
+                  value={draft.tripName}
+                  onChange={(e) => update({ tripName: e.target.value })}
+                  onFocus={onFieldFocus}
+                  onBlur={onFieldBlur}
+                  placeholder="e.g. Autumn Foliage & Deer Paths"
+                  className={fieldClass}
+                />
+              </div>
+            </DebugField>
+
+            <DebugField model="tour_templates" field="office_id">
+              <div>
+                <FieldLabel>Office Location</FieldLabel>
                 <div className="grid grid-cols-2 gap-1.5">
-                  {DURATION_TIERS.map((tier) => (
+                  {OFFICE_LOCATIONS.map((loc) => (
                     <button
-                      key={tier}
+                      key={loc}
                       type="button"
                       disabled={locked}
-                      onClick={() =>
-                        commit(
-                          "Duration tier changed",
-                          withSuggestedPrice({
-                            durationTier: tier as DurationTier,
-                          }),
-                        )
-                      }
-                      className={`rounded-lg px-2.5 py-2 text-center text-xs font-semibold transition disabled:cursor-default ${
-                        draft.durationTier === tier
+                      onClick={() => selectOffice(loc)}
+                      className={`rounded-lg px-2.5 py-2 text-xs font-semibold transition disabled:cursor-default ${
+                        draft.officeLocation === loc
                           ? "bg-[#121621] text-white"
                           : `bg-white text-gray-600 ${locked ? "opacity-60" : "hover:bg-gray-100"} border border-gray-200`
                       }`}
                     >
-                      {tier}
+                      {loc}
                     </button>
                   ))}
                 </div>
               </div>
+            </DebugField>
+
+            {draft.serviceType === "Airport" ? (
+              draft.officeLocation &&
+              (OFFICE_AIRPORTS[draft.officeLocation]?.length ?? 0) > 1 && (
+                <DebugField model="tour_templates" field="airport_code">
+                  <div>
+                    <FieldLabel>Airport</FieldLabel>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {OFFICE_AIRPORTS[draft.officeLocation].map((airport) => (
+                        <button
+                          key={airport}
+                          type="button"
+                          disabled={locked}
+                          onClick={() => selectAirport(airport)}
+                          className={`rounded-lg px-2.5 py-2 text-center text-xs font-semibold transition disabled:cursor-default ${
+                            draft.airport === airport
+                              ? "bg-[#121621] text-white"
+                              : `bg-white text-gray-600 ${locked ? "opacity-60" : "hover:bg-gray-100"} border border-gray-200`
+                          }`}
+                        >
+                          {airportDisplayName(airport)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </DebugField>
+              )
+            ) : (
+              <DebugField model="tour_templates" field="duration_tier">
+                <div>
+                  <FieldLabel>Duration Tier</FieldLabel>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {DURATION_TIERS.map((tier) => (
+                      <button
+                        key={tier}
+                        type="button"
+                        disabled={locked}
+                        onClick={() =>
+                          commit(
+                            "Duration tier changed",
+                            withSuggestedPrice({
+                              durationTier: tier as DurationTier,
+                            }),
+                          )
+                        }
+                        className={`rounded-lg px-2.5 py-2 text-center text-xs font-semibold transition disabled:cursor-default ${
+                          draft.durationTier === tier
+                            ? "bg-[#121621] text-white"
+                            : `bg-white text-gray-600 ${locked ? "opacity-60" : "hover:bg-gray-100"} border border-gray-200`
+                        }`}
+                      >
+                        {tier}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </DebugField>
             )}
 
             <div className="h-px bg-gray-200" />
@@ -663,28 +674,34 @@ export default function TourTemplateModal({
               Trip Totals
             </p>
             <div className="grid grid-cols-3 gap-2">
-              <div className="rounded-lg border border-gray-200 bg-white px-2.5 py-2">
-                <p className="text-[11px] text-gray-400">Distance</p>
-                <p className="mt-0.5 text-sm font-bold tabular-nums text-gray-900">
-                  {draft.tripDistanceKm !== null
-                    ? `${draft.tripDistanceKm.toFixed(1)} km`
-                    : "--"}
-                </p>
-              </div>
-              <div className="rounded-lg border border-gray-200 bg-white px-2.5 py-2">
-                <p className="text-[11px] text-gray-400">Duration</p>
-                <p className="mt-0.5 text-sm font-bold tabular-nums text-gray-900">
-                  {draft.tripDurationMins !== null
-                    ? formatDuration(draft.tripDurationMins)
-                    : "--"}
-                </p>
-              </div>
-              <div className="rounded-lg border border-[#121621] bg-[#121621] px-2.5 py-2">
-                <p className="text-[11px] text-white/50">Price</p>
-                <p className="mt-0.5 text-sm font-bold tabular-nums text-[#FACC15]">
-                  {draft.price !== null ? formatPrice(draft.price) : "--"}
-                </p>
-              </div>
+              <DebugField model="tour_templates" field="trip_distance_km">
+                <div className="rounded-lg border border-gray-200 bg-white px-2.5 py-2">
+                  <p className="text-[11px] text-gray-400">Distance</p>
+                  <p className="mt-0.5 text-sm font-bold tabular-nums text-gray-900">
+                    {draft.tripDistanceKm !== null
+                      ? `${draft.tripDistanceKm.toFixed(1)} km`
+                      : "--"}
+                  </p>
+                </div>
+              </DebugField>
+              <DebugField model="tour_templates" field="trip_duration_mins">
+                <div className="rounded-lg border border-gray-200 bg-white px-2.5 py-2">
+                  <p className="text-[11px] text-gray-400">Duration</p>
+                  <p className="mt-0.5 text-sm font-bold tabular-nums text-gray-900">
+                    {draft.tripDurationMins !== null
+                      ? formatDuration(draft.tripDurationMins)
+                      : "--"}
+                  </p>
+                </div>
+              </DebugField>
+              <DebugField model="tour_templates" field="price">
+                <div className="rounded-lg border border-[#121621] bg-[#121621] px-2.5 py-2">
+                  <p className="text-[11px] text-white/50">Price</p>
+                  <p className="mt-0.5 text-sm font-bold tabular-nums text-[#FACC15]">
+                    {draft.price !== null ? formatPrice(draft.price) : "--"}
+                  </p>
+                </div>
+              </DebugField>
             </div>
             {!readyForPrice ? (
               <p className="-mt-1 text-[11px] text-gray-400">
@@ -693,22 +710,24 @@ export default function TourTemplateModal({
                   : "Select an office and duration tier to set a starting price."}
               </p>
             ) : (
-              <div>
-                <FieldLabel>¥</FieldLabel>
-                <input
-                  type="number"
-                  min="0"
-                  step="1000"
-                  readOnly={locked}
-                  value={draft.price ?? 0}
-                  onChange={(e) =>
-                    update({ price: parseInt(e.target.value, 10) || 0 })
-                  }
-                  onFocus={onFieldFocus}
-                  onBlur={onFieldBlur}
-                  className={numFieldClass}
-                />
-              </div>
+              <DebugField model="tour_templates" field="price">
+                <div>
+                  <FieldLabel>¥</FieldLabel>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1000"
+                    readOnly={locked}
+                    value={draft.price ?? 0}
+                    onChange={(e) =>
+                      update({ price: parseInt(e.target.value, 10) || 0 })
+                    }
+                    onFocus={onFieldFocus}
+                    onBlur={onFieldBlur}
+                    className={numFieldClass}
+                  />
+                </div>
+              </DebugField>
             )}
             {!draft.tripDistanceKm && !draft.tripDurationMins && (
               <p className="-mt-1 text-[11px] text-gray-400">
@@ -723,6 +742,7 @@ export default function TourTemplateModal({
               Public Links
             </p>
             <div className="flex flex-col gap-2">
+              <DebugField model="tour_templates" field="tour_details_url">
               <div>
                 <FieldLabel>Tour details page</FieldLabel>
                 <div className="flex items-center gap-1.5">
@@ -762,6 +782,8 @@ export default function TourTemplateModal({
                   )}
                 </div>
               </div>
+              </DebugField>
+              <DebugField model="tour_templates" field="tour_booking_url">
               <div>
                 <FieldLabel>Booking page</FieldLabel>
                 <div className="flex items-center gap-1.5">
@@ -801,6 +823,7 @@ export default function TourTemplateModal({
                   )}
                 </div>
               </div>
+              </DebugField>
             </div>
 
             {showHidden && (
@@ -810,101 +833,111 @@ export default function TourTemplateModal({
                 </p>
                 {(
                   [
-                    ["User Name", "userName"],
-                    ["Email", "userEmail"],
-                    ["User Source", "userSource"],
-                    ["Payment Status", "paymentStatus"],
+                    ["User Name", "userName", "user_name"],
+                    ["Email", "userEmail", "user_email"],
+                    ["User Source", "userSource", "user_source"],
+                    ["Payment Status", "paymentStatus", "payment_status"],
                   ] as const
-                ).map(([label, key]) => (
-                  <div key={key}>
-                    <FieldLabel>{label}</FieldLabel>
-                    <input
-                      type="text"
-                      readOnly={locked}
-                      value={(draft[key] as string | null) ?? ""}
-                      onChange={(e) =>
-                        update({ [key]: e.target.value || null })
-                      }
-                      onFocus={onFieldFocus}
-                      onBlur={onFieldBlur}
-                      placeholder="—"
-                      className={smallFieldClass}
-                    />
-                  </div>
+                ).map(([label, key, dbField]) => (
+                  <DebugField key={key} model="tour_templates" field={dbField}>
+                    <div>
+                      <FieldLabel>{label}</FieldLabel>
+                      <input
+                        type="text"
+                        readOnly={locked}
+                        value={(draft[key] as string | null) ?? ""}
+                        onChange={(e) =>
+                          update({ [key]: e.target.value || null })
+                        }
+                        onFocus={onFieldFocus}
+                        onBlur={onFieldBlur}
+                        placeholder="—"
+                        className={smallFieldClass}
+                      />
+                    </div>
+                  </DebugField>
                 ))}
                 <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <FieldLabel>Driver</FieldLabel>
-                    <input
-                      type="text"
-                      readOnly={locked}
-                      value={draft.driverName ?? ""}
-                      onChange={(e) =>
-                        update({ driverName: e.target.value || null })
-                      }
-                      onFocus={onFieldFocus}
-                      onBlur={onFieldBlur}
-                      className={smallFieldClass}
-                    />
-                  </div>
-                  <div>
-                    <FieldLabel>Plate Number</FieldLabel>
-                    <input
-                      type="text"
-                      readOnly={locked}
-                      value={draft.plateNumber ?? ""}
-                      onChange={(e) =>
-                        update({ plateNumber: e.target.value || null })
-                      }
-                      onFocus={onFieldFocus}
-                      onBlur={onFieldBlur}
-                      className={smallFieldClass}
-                    />
-                  </div>
+                  <DebugField model="tour_templates" field="driver_name">
+                    <div>
+                      <FieldLabel>Driver</FieldLabel>
+                      <input
+                        type="text"
+                        readOnly={locked}
+                        value={draft.driverName ?? ""}
+                        onChange={(e) =>
+                          update({ driverName: e.target.value || null })
+                        }
+                        onFocus={onFieldFocus}
+                        onBlur={onFieldBlur}
+                        className={smallFieldClass}
+                      />
+                    </div>
+                  </DebugField>
+                  <DebugField model="tour_templates" field="plate_number">
+                    <div>
+                      <FieldLabel>Plate Number</FieldLabel>
+                      <input
+                        type="text"
+                        readOnly={locked}
+                        value={draft.plateNumber ?? ""}
+                        onChange={(e) =>
+                          update({ plateNumber: e.target.value || null })
+                        }
+                        onFocus={onFieldFocus}
+                        onBlur={onFieldBlur}
+                        className={smallFieldClass}
+                      />
+                    </div>
+                  </DebugField>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <FieldLabel>Passengers</FieldLabel>
-                    <select
-                      disabled={locked}
-                      value={draft.passengers ?? ""}
-                      onChange={(e) =>
-                        update({
-                          passengers: e.target.value
-                            ? Number(e.target.value)
-                            : null,
-                        })
-                      }
-                      className={smallFieldClass}
-                    >
-                      <option value="">—</option>
-                      {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ))}
+                  <DebugField model="tour_templates" field="passengers">
+                    <div>
+                      <FieldLabel>Passengers</FieldLabel>
+                      <select
+                        disabled={locked}
+                        value={draft.passengers ?? ""}
+                        onChange={(e) =>
+                          update({
+                            passengers: e.target.value
+                              ? Number(e.target.value)
+                              : null,
+                          })
+                        }
+                        className={smallFieldClass}
+                      >
+                        <option value="">—</option>
+                        {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                          <option key={n} value={n}>
+                            {n}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </DebugField>
+                  <DebugField model="tour_templates" field="luggage">
+                    <div>
+                      <FieldLabel>Luggage</FieldLabel>
+                      <select
+                        disabled={locked}
+                        value={draft.luggage ?? ""}
+                        onChange={(e) =>
+                          update({
+                            luggage: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className={smallFieldClass}
+                      >
+                        <option value="">—</option>
+                        {[0, 1, 2, 3, 4].map((n) => (
+                          <option key={n} value={n}>
+                            {n}
+                          </option>
+                        ))}
                     </select>
                   </div>
-                  <div>
-                    <FieldLabel>Luggage</FieldLabel>
-                    <select
-                      disabled={locked}
-                      value={draft.luggage ?? ""}
-                      onChange={(e) =>
-                        update({
-                          luggage: e.target.value ? Number(e.target.value) : null,
-                        })
-                      }
-                      className={smallFieldClass}
-                    >
-                      <option value="">—</option>
-                      {[0, 1, 2, 3, 4].map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  </DebugField>
                 </div>
                 <label className="flex items-center gap-2 text-xs text-gray-600">
                   <input
@@ -1024,28 +1057,32 @@ export default function TourTemplateModal({
                 ) : (
                   <>
                     <div className={`border-b border-gray-100 bg-gray-50/60 p-3 ${EDIT_ROUTE_ROW_GRID}`}>
-                      <div>
-                        <FieldLabel>Pick-up Spot</FieldLabel>
-                        <input
-                          type="text"
-                          value={wp.pickup}
-                          onChange={(e) => updateRouteCopy({ pickup: e.target.value })}
-                          placeholder="Pick-up description"
-                          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
-                        />
-                      </div>
-                      {draft.serviceType === "Airport" ? (
-                        <div aria-hidden="true" />
-                      ) : (
+                      <DebugField model="waypoints" field="pickup_text">
                         <div>
-                          <FieldLabel>Time</FieldLabel>
+                          <FieldLabel>Pick-up Spot</FieldLabel>
                           <input
-                            type="time"
-                            value={wp.pickupTime}
-                            onChange={(e) => updateRouteCopy({ pickupTime: e.target.value })}
+                            type="text"
+                            value={wp.pickup}
+                            onChange={(e) => updateRouteCopy({ pickup: e.target.value })}
+                            placeholder="Pick-up description"
                             className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
                           />
                         </div>
+                      </DebugField>
+                      {draft.serviceType === "Airport" ? (
+                        <div aria-hidden="true" />
+                      ) : (
+                        <DebugField model="waypoints" field="pickup_time">
+                          <div>
+                            <FieldLabel>Time</FieldLabel>
+                            <input
+                              type="time"
+                              value={wp.pickupTime}
+                              onChange={(e) => updateRouteCopy({ pickupTime: e.target.value })}
+                              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                            />
+                          </div>
+                        </DebugField>
                       )}
                       <MapLocationPicker
                         theme="light"
@@ -1126,16 +1163,18 @@ export default function TourTemplateModal({
                     </div>
 
                     <div className={`bg-gray-50/60 p-3 ${EDIT_ROUTE_ROW_GRID}`}>
-                      <div>
-                        <FieldLabel>Drop-off Spot</FieldLabel>
-                        <input
-                          type="text"
-                          value={wp.dropoff}
-                          onChange={(e) => updateRouteCopy({ dropoff: e.target.value })}
-                          placeholder="Drop-off description"
-                          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
-                        />
-                      </div>
+                      <DebugField model="waypoints" field="dropoff_text">
+                        <div>
+                          <FieldLabel>Drop-off Spot</FieldLabel>
+                          <input
+                            type="text"
+                            value={wp.dropoff}
+                            onChange={(e) => updateRouteCopy({ dropoff: e.target.value })}
+                            placeholder="Drop-off description"
+                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                          />
+                        </div>
+                      </DebugField>
                       <div aria-hidden="true" className="hidden sm:block" />
                       <MapLocationPicker
                         theme="light"
