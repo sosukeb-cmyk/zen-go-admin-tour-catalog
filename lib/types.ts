@@ -83,6 +83,12 @@ export interface OrderDetail {
   passengers: number | null;
   luggage: number | null;
   waypoints: TourWaypoints;
+  /** Auto-calculated from the route's pick-up/drop-off/stopover map pins
+   * whenever the route is (re)applied — see estimateRouteMetrics. */
+  routeDistanceKm: number | null;
+  routeDurationMins: number | null;
+  /** Admin-set preset — independent of routeDistanceKm/routeDurationMins,
+   * never written by the route calculation. */
   tripDistanceKm: number | null;
   tripDurationMins: number | null;
   previewLinks: PreviewLinks;

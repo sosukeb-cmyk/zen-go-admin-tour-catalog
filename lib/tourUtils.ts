@@ -212,6 +212,8 @@ export function createEmptyTour(): TourTemplate {
       dropoff: "",
       dropoffMapLocation: null,
     },
+    routeDistanceKm: null,
+    routeDurationMins: null,
     tripDistanceKm: null,
     tripDurationMins: null,
     previewLinks: buildDefaultPreviewLinks("", DRAFT_ID_PLACEHOLDER),

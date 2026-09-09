@@ -285,8 +285,8 @@ export default function TourTemplateModal({
       ...draft,
       waypoints: structuredClone(routeCopy),
       startTime: routeCopy.pickupTime,
-      tripDistanceKm: metrics?.distanceKm ?? null,
-      tripDurationMins: metrics?.durationMins ?? null,
+      routeDistanceKm: metrics?.distanceKm ?? null,
+      routeDurationMins: metrics?.durationMins ?? null,
     });
     setRouteEditing(false);
     setRouteCopy(null);
@@ -674,22 +674,22 @@ export default function TourTemplateModal({
               Trip Totals
             </p>
             <div className="grid grid-cols-3 gap-2">
-              <DebugField model="tour_templates" field="trip_distance_km">
+              <DebugField model="tour_templates" field="route_distance_km">
                 <div className="rounded-lg border border-gray-200 bg-white px-2.5 py-2">
                   <p className="text-[11px] text-gray-400">Distance</p>
                   <p className="mt-0.5 text-sm font-bold tabular-nums text-gray-900">
-                    {draft.tripDistanceKm !== null
-                      ? `${draft.tripDistanceKm.toFixed(1)} km`
+                    {draft.routeDistanceKm !== null
+                      ? `${draft.routeDistanceKm.toFixed(1)} km`
                       : "--"}
                   </p>
                 </div>
               </DebugField>
-              <DebugField model="tour_templates" field="trip_duration_mins">
+              <DebugField model="tour_templates" field="route_duration_mins">
                 <div className="rounded-lg border border-gray-200 bg-white px-2.5 py-2">
                   <p className="text-[11px] text-gray-400">Duration</p>
                   <p className="mt-0.5 text-sm font-bold tabular-nums text-gray-900">
-                    {draft.tripDurationMins !== null
-                      ? formatDuration(draft.tripDurationMins)
+                    {draft.routeDurationMins !== null
+                      ? formatDuration(draft.routeDurationMins)
                       : "--"}
                   </p>
                 </div>
@@ -729,13 +729,16 @@ export default function TourTemplateModal({
                 </div>
               </DebugField>
             )}
-            {!draft.tripDistanceKm && !draft.tripDurationMins && (
-              <p className="-mt-1 text-[11px] text-gray-400">
-                Distance and duration are calculated once the route&apos;s
-                pick-up and drop-off pins are set — or preset them manually
-                below.
-              </p>
-            )}
+            {!draft.routeDistanceKm &&
+              !draft.routeDurationMins &&
+              !draft.tripDistanceKm &&
+              !draft.tripDurationMins && (
+                <p className="-mt-1 text-[11px] text-gray-400">
+                  Distance and duration are calculated once the route&apos;s
+                  pick-up and drop-off pins are set — or preset them manually
+                  below.
+                </p>
+              )}
             <div className="grid grid-cols-2 gap-2">
               <DebugField model="tour_templates" field="trip_distance_km">
                 <div>
@@ -1016,10 +1019,10 @@ export default function TourTemplateModal({
                   <p className="text-xs text-gray-400">
                     {wp.stopovers.length} stopover
                     {wp.stopovers.length === 1 ? "" : "s"} ·{" "}
-                    {draft.tripDistanceKm !== null
-                      ? `${draft.tripDistanceKm.toFixed(1)} km`
+                    {draft.routeDistanceKm !== null
+                      ? `${draft.routeDistanceKm.toFixed(1)} km`
                       : "--"}{" "}
-                    · {formatDuration(draft.tripDurationMins)}
+                    · {formatDuration(draft.routeDurationMins)}
                   </p>
                   <button
                     type="button"

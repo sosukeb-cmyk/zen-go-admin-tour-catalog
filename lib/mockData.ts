@@ -32,8 +32,10 @@ const SIGHTSEEING_SEED_TOURS: TourTemplate[] = [
       ],
       dropoff: "Osaka Station",
     },
-    tripDistanceKm: 80.2,
-    tripDurationMins: 330,
+    routeDistanceKm: 80.2,
+    routeDurationMins: 330,
+    tripDistanceKm: null,
+    tripDurationMins: null,
     previewLinks: {
       tourDetails:
         "https://www.zengoride.com/tours/autumn-foliage-deer-paths",
@@ -73,8 +75,10 @@ const SIGHTSEEING_SEED_TOURS: TourTemplate[] = [
       ],
       dropoff: "Kamakura Station",
     },
-    tripDistanceKm: 45.0,
-    tripDurationMins: 300,
+    routeDistanceKm: 45.0,
+    routeDurationMins: 300,
+    tripDistanceKm: null,
+    tripDurationMins: null,
     previewLinks: {
       tourDetails: "https://www.zengoride.com/tours/buddha-by-the-beach",
       tourBooking: "https://exert-hula-resilient.ngrok-free.dev/tours/buddha-by-the-beach/00002/2026-09-02",
@@ -113,8 +117,10 @@ const SIGHTSEEING_SEED_TOURS: TourTemplate[] = [
       ],
       dropoff: "Shibuya Crossing",
     },
-    tripDistanceKm: 30.5,
-    tripDurationMins: 600,
+    routeDistanceKm: 30.5,
+    routeDurationMins: 600,
+    tripDistanceKm: null,
+    tripDurationMins: null,
     previewLinks: {
       tourDetails: "https://www.zengoride.com/tours/flavors-of-edo",
       tourBooking: "https://exert-hula-resilient.ngrok-free.dev/tours/flavors-of-edo/00003/2026-09-02",
@@ -229,6 +235,8 @@ function buildAirportPresetTours(): TourTemplate[] {
         dropoff: route.destination,
         dropoffMapLocation: null,
       },
+      routeDistanceKm: null,
+      routeDurationMins: null,
       tripDistanceKm: null,
       tripDurationMins: null,
       previewLinks: {
