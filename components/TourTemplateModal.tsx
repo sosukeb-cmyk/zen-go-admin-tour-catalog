@@ -732,9 +732,58 @@ export default function TourTemplateModal({
             {!draft.tripDistanceKm && !draft.tripDurationMins && (
               <p className="-mt-1 text-[11px] text-gray-400">
                 Distance and duration are calculated once the route&apos;s
-                pick-up and drop-off pins are set.
+                pick-up and drop-off pins are set — or preset them manually
+                below.
               </p>
             )}
+            <div className="grid grid-cols-2 gap-2">
+              <DebugField model="tour_templates" field="trip_distance_km">
+                <div>
+                  <FieldLabel>Preset Distance (km)</FieldLabel>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    readOnly={locked}
+                    value={draft.tripDistanceKm ?? ""}
+                    onChange={(e) =>
+                      update({
+                        tripDistanceKm: e.target.value
+                          ? parseFloat(e.target.value)
+                          : null,
+                      })
+                    }
+                    onFocus={onFieldFocus}
+                    onBlur={onFieldBlur}
+                    placeholder="—"
+                    className={smallFieldClass}
+                  />
+                </div>
+              </DebugField>
+              <DebugField model="tour_templates" field="trip_duration_mins">
+                <div>
+                  <FieldLabel>Preset Duration (min)</FieldLabel>
+                  <input
+                    type="number"
+                    min="0"
+                    step="5"
+                    readOnly={locked}
+                    value={draft.tripDurationMins ?? ""}
+                    onChange={(e) =>
+                      update({
+                        tripDurationMins: e.target.value
+                          ? parseInt(e.target.value, 10)
+                          : null,
+                      })
+                    }
+                    onFocus={onFieldFocus}
+                    onBlur={onFieldBlur}
+                    placeholder="—"
+                    className={smallFieldClass}
+                  />
+                </div>
+              </DebugField>
+            </div>
 
             <div className="h-px bg-gray-200" />
 
