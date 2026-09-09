@@ -438,7 +438,7 @@ function AirportPriceModal({
               Owner
             </p>
             <div className="flex gap-1.5">
-              {(["Self-Owned", "Partner"] as const).map((owner) => (
+              {(["Self", "Partner"] as const).map((owner) => (
                 <button
                   key={owner}
                   type="button"
